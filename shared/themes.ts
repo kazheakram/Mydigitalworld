@@ -35,7 +35,7 @@ export const COQUETTE: ThemeTokens = {
     trim: '#ffffff',
     window: '#ffe8b8',
     accent: '#a7bccd',
-    focus: '#8a4fff',
+    focus: '#a8467a',
   },
   fonts: baseFonts,
   sizes: { base: 18, scale: 1.25 },

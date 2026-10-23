@@ -290,7 +290,7 @@ export function MediaLibraryPage() {
 
 // ───────────── Village settings ─────────────
 export function VillageSettingsPage() {
-  const { world, saveWorld, toast } = useStore();
+  const { world, saveWorld, toast, theme } = useStore();
   const [w, setW] = useState(() => clone(world));
   const [pw, setPw] = useState({ current: '', next: '' });
   const save = async () => { await saveWorld({ ...world, name: w.name, tagline: w.tagline, introEnabled: w.introEnabled, introText: w.introText, modes: w.modes, gardenStages: w.gardenStages, regions: w.regions }); toast('Saved as a draft — publish to share it.'); };
@@ -300,6 +300,14 @@ export function VillageSettingsPage() {
       <Field label="Title"><input className="input" value={w.modes[k].title} onChange={(e) => setW({ ...w, modes: { ...w.modes, [k]: { ...w.modes[k], title: e.target.value } } })} /></Field>
       <Field label="Subtitle"><input className="input" value={w.modes[k].subtitle} onChange={(e) => setW({ ...w, modes: { ...w.modes, [k]: { ...w.modes[k], subtitle: e.target.value } } })} /></Field>
       <Field label="Little handwritten notes" hint="One per line — they appear on paper tags around the page."><textarea className="input" rows={3} value={w.modes[k].notes.join('\n')} onChange={(e) => setW({ ...w, modes: { ...w.modes, [k]: { ...w.modes[k], notes: e.target.value.split('\n') } } })} /></Field>
+      {k !== 'visitor' && (
+        <Field label="This mode's own theme" hint="Leave on “main theme” to follow the Theme Closet.">
+          <select className="input" value={w.modes[k].theme ?? ''} onChange={(e) => setW({ ...w, modes: { ...w.modes, [k]: { ...w.modes[k], theme: e.target.value || undefined } } })}>
+            <option value="">main theme</option>
+            {[...PRESET_THEMES, ...theme.custom].map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+          </select>
+        </Field>
+      )}
     </fieldset>
   );
   return (

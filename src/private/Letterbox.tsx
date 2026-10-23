@@ -52,6 +52,7 @@ export function LetterboxPage() {
   const [moving, setMoving] = useState<Item<InboxData> | null>(null);
   const [editing, setEditing] = useState<Item<InboxData> | null>(null);
   const all = inbox.data ?? [];
+  const bookmarklet = `javascript:location.href='${location.origin}/share?url='+encodeURIComponent(location.href)+'&title='+encodeURIComponent(document.title)`;
   const counts = useMemo(() => ({
     new: all.filter((i) => i.data.status === 'new' && !isResting(i.data)).length,
     resting: all.filter((i) => isResting(i.data)).length,
@@ -137,6 +138,13 @@ export function LetterboxPage() {
           ))}
         </div>
       )}
+      <details className="lace-card save-anywhere">
+        <summary className="smallcaps">save from anywhere</summary>
+        <p><strong>On a computer:</strong> make a new bookmark in your browser, name it “✉ Letterbox”, and paste this as its address. Clicking it on any page tucks that page into your letterbox.</p>
+        <code className="bookmarklet">{bookmarklet}</code>
+        <button className="btn small ghost" onClick={() => navigator.clipboard?.writeText(bookmarklet).then(() => toast('Copied ♡'))}>Copy</button>
+        <p><strong>On a phone:</strong> add this site to your home screen (see the owner's guide). On Android, Ribbonmere then appears in the Share menu. On iPhone, use the bookmark above in Safari, or paste links here.</p>
+      </details>
       <MoveToCollection item={moving} onClose={() => { setMoving(null); inbox.reload(); }} />
       <InboxEdit item={editing} onClose={() => { setEditing(null); inbox.reload(); }} />
     </ModeShell>

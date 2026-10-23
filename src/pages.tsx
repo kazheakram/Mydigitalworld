@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import type { Item } from '../shared/types';
 import { useStore } from './lib/store';
 import { api } from './lib/api';
-import { hostOf, timeAgo } from './lib/util';
+import { hostOf } from './lib/util';
 import { TopNav } from './ui/Nav';
 import { BowIcon, Empty, Field, Loading, VisBadge } from './ui/kit';
 import { titleOf } from './rooms/schema';
@@ -141,4 +141,3 @@ export function SharePage() {
 export function NotFound() {
   return <div className="page"><header className="page-header"><TopNav /></header><main className="page-main narrow"><Empty title="You've wandered off the map" art="🗺"><Link to="/">Back to the village</Link></Empty></main></div>;
 }
-export { timeAgo };

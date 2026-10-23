@@ -3,6 +3,9 @@ import { Link, NavLink } from 'react-router-dom';
 import { useStore } from '../lib/store';
 import { TopNav } from '../ui/Nav';
 import { BowIcon, Tag } from '../ui/kit';
+import { ArtSvg } from '../art';
+import { PRESET_THEMES } from '../../shared/themes';
+import { themeVars } from '../lib/theme';
 
 // The frame shared by Dollhouse Mode and Stargirl Mode: script title, ribbon nav bar, lace edges.
 
@@ -25,8 +28,11 @@ export const STARGIRL_NAV = [
 ];
 
 export function ModeShell({ mode, children, small }: { mode: 'private' | 'stargirl'; children: ReactNode; small?: boolean }) {
-  const { world, owner, ready } = useStore();
+  const { world, owner, ready, theme } = useStore();
   const copy = world.modes[mode];
+  // A mode can wear its own theme (Stargirl Mode defaults to the night palette); otherwise it follows the main theme.
+  const modeTheme = copy.theme ? [...PRESET_THEMES, ...theme.custom].find((t) => t.id === copy.theme) : undefined;
+  const style = modeTheme ? (themeVars(modeTheme) as React.CSSProperties) : undefined;
   const navItems = mode === 'private' ? DOLLHOUSE_NAV : STARGIRL_NAV;
   if (ready && !owner) {
     return (
@@ -43,9 +49,15 @@ export function ModeShell({ mode, children, small }: { mode: 'private' | 'stargi
     );
   }
   return (
-    <div className={`mode-page mode-${mode} ${small ? 'compact' : ''}`}>
+    <div className={`mode-page mode-${mode} ${small ? 'compact' : ''}`} style={style}>
       <div className="lace-edge top" aria-hidden />
       <header className="mode-header">
+        {mode === 'stargirl' && (
+          <div className="night-band" aria-hidden>
+            <ArtSvg art="moon" className="header-moon" />
+            {[[8, 30], [18, 70], [30, 22], [62, 18], [74, 64], [86, 28], [94, 72], [44, 80]].map(([x, y], i) => <span key={i} className="band-star" style={{ left: `${x}%`, top: `${y}%`, animationDelay: `${i * -0.7}s` }}>✦</span>)}
+          </div>
+        )}
         <div className="mode-header-side hide-narrow">{copy.notes[0] && <Tag tilt={-4}>{copy.notes[0]}</Tag>}</div>
         <div className="mode-title">
           <BowIcon size={56} className="title-bow" />

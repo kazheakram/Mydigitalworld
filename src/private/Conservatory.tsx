@@ -14,7 +14,7 @@ type FeedRow = Feed & { unread: number };
 const CATEGORIES = ['Books & Literature', 'Writing & Creativity', 'Academics & Learning', 'Design & Inspiration', 'Music & Culture', 'Internet Discoveries', 'Personal Interests'];
 
 export function ConservatoryPage() {
-  const { toast, world } = useStore();
+  const { toast } = useStore();
   const feeds = useAsync<FeedRow[]>(() => api('GET', '/api/feeds'), []);
   const [feedId, setFeedId] = useState<string | null>(null);
   const [cat, setCat] = useState<string | null>(null);
@@ -115,7 +115,6 @@ export function ConservatoryPage() {
       </div>
       <AddFeed open={adding} onClose={() => setAdding(false)} onAdded={() => { feeds.reload(); entries.reload(); }} categories={[...new Set([...CATEGORIES, ...cats])]} />
       <ManageFeed feed={manage} onClose={() => { setManage(null); feeds.reload(); entries.reload(); }} categories={[...new Set([...CATEGORIES, ...cats])]} />
-      <span hidden>{world.name}</span>
     </ModeShell>
   );
 }

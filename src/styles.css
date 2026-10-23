@@ -420,7 +420,16 @@ textarea.input { min-height: auto; resize: vertical; line-height: 1.6; }
 .freeform-stage { border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-lift); }
 
 /* ── Dollhouse & Stargirl modes ──────────────────── */
-.mode-page { min-height: 100vh; position: relative; padding-bottom: 3rem; }
+.mode-page { min-height: 100vh; position: relative; padding-bottom: 3rem; background-color: var(--c-bg); color: var(--c-ink); }
+.mode-header { position: relative; }
+.night-band { position: absolute; inset: 0 0 -10px; z-index: 0; border-radius: 0 0 50% 50% / 0 0 30px 30px; overflow: hidden;
+  background: radial-gradient(ellipse at 50% 120%, color-mix(in srgb, var(--c-rose) 40%, transparent), transparent 60%), linear-gradient(180deg, var(--c-skyTop), var(--c-sky)); }
+.mode-header > :not(.night-band) { position: relative; z-index: 1; }
+.header-moon { position: absolute; left: 21%; top: 26px; width: 50px; height: 50px; }
+.band-star { position: absolute; color: var(--c-window); font-size: .8rem; text-shadow: 0 0 6px var(--c-window); }
+[data-motion='on'] .band-star, [data-motion='lively'] .band-star { animation: twinkle 3s ease-in-out infinite; }
+.mode-stargirl .mode-title h1 { color: var(--c-paper); text-shadow: 0 2px 12px color-mix(in srgb, var(--c-skyTop) 70%, transparent); }
+.mode-stargirl .mode-title .smallcaps { color: color-mix(in srgb, var(--c-paper) 85%, transparent); }
 .lace-edge { height: 22px; opacity: .95;
   background: radial-gradient(circle 2.4px at 12px 6px, color-mix(in srgb, var(--c-rose) 35%, transparent) 90%, transparent) 0 0 / 24px 22px repeat-x,
               radial-gradient(circle 11px at 12px 0, var(--c-trim) 92%, transparent) 0 0 / 24px 22px repeat-x; }
@@ -430,7 +439,6 @@ textarea.input { min-height: auto; resize: vertical; line-height: 1.6; }
 .mode-title { text-align: center; padding-top: 1rem; }
 .mode-title h1 { font-size: clamp(3rem, 9vw, 5.4rem); margin: -.1em 0 -.05em; }
 .ribbon-nav { display: flex; align-items: center; justify-content: center; gap: 0; flex-wrap: wrap; margin: 1rem 0 1.4rem; padding: .45rem 1rem; background: linear-gradient(180deg, var(--c-pink), color-mix(in srgb, var(--c-pink) 75%, var(--c-rose))); box-shadow: var(--shadow); position: relative; }
-.ribbon-nav::before, .ribbon-nav::after { content: ''; position: absolute; top: 0; bottom: 0; width: 30px; background: inherit; }
 .ribbon-nav a { font-family: var(--font-display); font-variant: small-caps; letter-spacing: .2em; text-transform: lowercase; font-size: .82rem; text-decoration: none; color: var(--c-ink); padding: .35rem 1.1rem; border-left: 1px solid color-mix(in srgb, var(--c-roseDeep) 30%, transparent); }
 .ribbon-nav a.active { color: var(--c-roseDeep); text-decoration: underline wavy var(--c-rose); text-underline-offset: 6px; }
 .ribbon-nav-tail { position: absolute; right: 1.4rem; font-size: 1.3rem; }
@@ -537,7 +545,7 @@ textarea.input { min-height: auto; resize: vertical; line-height: 1.6; }
 .mini-spine { width: 18px; height: 70px; border-radius: 2px; flex: none; }
 
 .mode-stargirl { --c-paper: color-mix(in srgb, var(--c-cream) 75%, var(--c-trim)); background-image: radial-gradient(color-mix(in srgb, var(--c-gold) 60%, transparent) 1.2px, transparent 1.6px), radial-gradient(color-mix(in srgb, var(--c-accent) 50%, transparent) 1px, transparent 1.4px); background-size: 46px 46px, 70px 70px; }
-.mode-stargirl .script { color: color-mix(in srgb, var(--c-ink) 70%, var(--c-accent)); }
+.mode-stargirl .script { color: var(--c-ink); }
 .mode-stargirl .polaroid-title { color: var(--c-roseDeep); }
 .mode-stargirl .ribbon-nav { background: linear-gradient(180deg, color-mix(in srgb, var(--c-accent) 40%, var(--c-pink)), var(--c-pink)); }
 .torn-card.night { background: radial-gradient(color-mix(in srgb, var(--c-gold) 60%, transparent) 1px, transparent 1.5px) 0 0 / 30px 30px, var(--c-paper); }
@@ -667,3 +675,6 @@ textarea.input { min-height: auto; resize: vertical; line-height: 1.6; }
   .quick-add { flex-direction: row; }
   .page-header { padding: .6rem 1rem; }
 }
+
+.save-anywhere { margin-top: 2rem; } .save-anywhere summary { cursor: pointer; }
+.bookmarklet { display: block; word-break: break-all; padding: .6rem; margin: .4rem 0; background: var(--c-cream); border-radius: 8px; }

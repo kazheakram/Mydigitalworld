@@ -187,7 +187,8 @@ try {
   assert.equal(pink, '#e7cde6', 'theme persisted');
   await shot(o, '21-theme-closet');
   await o.goto(`${BASE}/`);
-  await o.waitForTimeout(500);
+  await o.getByRole('button', { name: /untie the ribbon/i }).click();
+  await o.waitForTimeout(1100);
   await shot(o, '22-village-winter');
   await o.goto(`${BASE}/atelier/theme`);
   await o.getByRole('button', { name: /try ribbonmere coquette/i }).click();

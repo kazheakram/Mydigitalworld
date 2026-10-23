@@ -46,9 +46,16 @@ function Dresses() {
 
 export function Vignette({ kind }: { kind: string }) {
   const pieces = SCENES[kind] ?? SCENES.inbox;
+  const night = ['picks', 'rabbit', 'discoveries', 'collections'].includes(kind);
   return (
     <svg viewBox="0 0 200 150" className="vignette" aria-hidden>
-      <rect width={200} height={150} fill={tok('blush')} />
+      {night ? (
+        <>
+          <defs><linearGradient id="vg-night" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor={tok('skyTop')} /><stop offset="1" stopColor={tok('sky')} /></linearGradient></defs>
+          <rect width={200} height={150} fill="url(#vg-night)" />
+          {[[20, 20], [60, 12], [96, 30], [140, 16], [180, 40], [36, 60], [168, 76]].map(([x, y], i) => <circle key={i} cx={x} cy={y} r={1.4} fill={tok('window')} />)}
+        </>
+      ) : <rect width={200} height={150} fill={tok('blush')} />}
       <path d="M0 110 H200 V150 H0 Z" fill={tok('cream')} />
       {pieces.map(([art, x, y, w, h], i) => {
         if (art === 'diary') return <g key={i} transform={`translate(${x} ${y}) scale(${w / 200} ${h / 140})`}><Diary /></g>;
