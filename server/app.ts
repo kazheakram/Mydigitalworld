@@ -118,7 +118,9 @@ export function createApp(opts: AppOptions) {
     if (!isKey(key)) return res.status(404).json({ error: 'Unknown setting.' });
     const cfg = readConfig(key);
     if ((req as any).owner) {
-      return res.json({ draft: cfg.draft, published: cfg.published, updatedAt: cfg.updatedAt, hasUnpublished: JSON.stringify(cfg.draft) !== JSON.stringify(cfg.published) });
+      return res.json({ draft: cfg.draft, published: cfg.published, updatedAt: cfg.updatedAt, hasUnpublished: key === 'world'
+        ? JSON.stringify(publicWorld(cfg.draft)) !== JSON.stringify(publicWorld(cfg.published))
+        : JSON.stringify(cfg.draft) !== JSON.stringify(cfg.published) });
     }
     res.json({ published: key === 'world' ? publicWorld(cfg.published) : publicTheme(cfg.published) });
   });
@@ -180,6 +182,7 @@ export function createApp(opts: AppOptions) {
   const publicFilter = (it: Item, allowUnlisted = false, rooms = visibleRoomIds()) =>
     (it.visibility === 'public' || (allowUnlisted && it.visibility === 'unlisted'))
     && !ALWAYS_PRIVATE_KINDS.includes(it.kind)
+    && it.kind !== 'media' // the media library is the owner's; visitors only get files used on public pages
     && (it.roomId === null || rooms.has(it.roomId));
 
   app.get('/api/items', (req, res) => {

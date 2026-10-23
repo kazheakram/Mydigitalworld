@@ -1,0 +1,80 @@
+import { lazy, Suspense } from 'react';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { StoreProvider, useStore } from './lib/store';
+import { Loading, Toasts } from './ui/kit';
+import { PreviewBanner } from './ui/Nav';
+import { SeasonLayer } from './world/Season';
+import { PlacesPage, WorldPage } from './world/WorldPage';
+import { RoomPage } from './rooms/RoomPage';
+import { LoginPage, NotFound, SearchPage, SharePage } from './pages';
+
+// Private areas load separately, so visitors never download the editor or dashboard code.
+const DollhousePage = lazy(() => import('./private/Dollhouse').then((m) => ({ default: m.DollhousePage })));
+const LetterboxPage = lazy(() => import('./private/Letterbox').then((m) => ({ default: m.LetterboxPage })));
+const CabinetPage = lazy(() => import('./private/Cabinet').then((m) => ({ default: m.CabinetPage })));
+const ConservatoryPage = lazy(() => import('./private/Conservatory').then((m) => ({ default: m.ConservatoryPage })));
+const ReadingRoomPage = lazy(() => import('./private/ReadingDiary').then((m) => ({ default: m.ReadingRoomPage })));
+const DiaryPage = lazy(() => import('./private/ReadingDiary').then((m) => ({ default: m.DiaryPage })));
+const StargirlPage = lazy(() => import('./private/Stargirl').then((m) => ({ default: m.StargirlPage })));
+const RabbitHolesPage = lazy(() => import('./private/Stargirl').then((m) => ({ default: m.RabbitHolesPage })));
+const DiscoveriesPage = lazy(() => import('./private/Stargirl').then((m) => ({ default: m.DiscoveriesPage })));
+const PicksPage = lazy(() => import('./private/Stargirl').then((m) => ({ default: m.PicksPage })));
+const WorldEditorPage = lazy(() => import('./atelier/Atelier').then((m) => ({ default: m.WorldEditorPage })));
+const RoomEditorPage = lazy(() => import('./atelier/Atelier').then((m) => ({ default: m.RoomEditorPage })));
+const ThemeClosetPage = lazy(() => import('./atelier/Studio').then((m) => ({ default: m.ThemeClosetPage })));
+const RoomsManagerPage = lazy(() => import('./atelier/Studio').then((m) => ({ default: m.RoomsManagerPage })));
+const MediaLibraryPage = lazy(() => import('./atelier/Studio').then((m) => ({ default: m.MediaLibraryPage })));
+const VillageSettingsPage = lazy(() => import('./atelier/Studio').then((m) => ({ default: m.VillageSettingsPage })));
+const BackupsPage = lazy(() => import('./atelier/Studio').then((m) => ({ default: m.BackupsPage })));
+
+function Shell() {
+  const { ready } = useStore();
+  if (!ready) return <div className="boot"><Loading what="Opening the gate" /></div>;
+  return (
+    <>
+      <a className="skip-link" href="#main">Skip to content</a>
+      <PreviewBanner />
+      <SeasonLayer />
+      <Suspense fallback={<Loading />}>
+        <Routes>
+          <Route path="/" element={<WorldPage />} />
+          <Route path="/places" element={<PlacesPage />} />
+          <Route path="/room/:roomId" element={<RoomPage />} />
+          <Route path="/room/:roomId/:itemId" element={<RoomPage />} />
+          <Route path="/search" element={<SearchPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/share" element={<SharePage />} />
+          <Route path="/dollhouse" element={<DollhousePage />} />
+          <Route path="/dollhouse/inbox" element={<LetterboxPage />} />
+          <Route path="/dollhouse/reading" element={<ReadingRoomPage />} />
+          <Route path="/dollhouse/diary" element={<DiaryPage />} />
+          <Route path="/dollhouse/bookmarks" element={<CabinetPage />} />
+          <Route path="/dollhouse/favorites" element={<ConservatoryPage />} />
+          <Route path="/stargirl" element={<StargirlPage />} />
+          <Route path="/stargirl/rabbit-holes" element={<RabbitHolesPage />} />
+          <Route path="/stargirl/discoveries" element={<DiscoveriesPage />} />
+          <Route path="/stargirl/picks" element={<PicksPage />} />
+          <Route path="/atelier" element={<WorldEditorPage />} />
+          <Route path="/atelier/room/:roomId" element={<RoomEditorPage />} />
+          <Route path="/atelier/theme" element={<ThemeClosetPage />} />
+          <Route path="/atelier/rooms" element={<RoomsManagerPage />} />
+          <Route path="/atelier/media" element={<MediaLibraryPage />} />
+          <Route path="/atelier/village" element={<VillageSettingsPage />} />
+          <Route path="/atelier/backup" element={<BackupsPage />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Suspense>
+      <Toasts />
+    </>
+  );
+}
+
+export default function App() {
+  return (
+    <StoreProvider>
+      <BrowserRouter>
+        <Shell />
+      </BrowserRouter>
+    </StoreProvider>
+  );
+}

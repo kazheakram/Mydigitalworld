@@ -95,7 +95,7 @@ export const DEFAULT_WORLD: WorldConfig = {
   scene: { width: 1600, height: 1000, ground: 'meadow' },
   objects: DEFAULT_OBJECTS,
   regions: [
-    { id: 'orchard', name: 'The Misty Orchard', revealed: false, mystery: 'Something sweet is ripening under these clouds…', x: 0, y: 760, w: 380, h: 240 },
+    { id: 'orchard', name: 'The Misty Orchard', revealed: false, mystery: 'Something sweet is ripening under these clouds…', x: 0, y: 830, w: 250, h: 170 },
     { id: 'pier', name: 'The Moonlit Pier', revealed: false, mystery: 'You hear water lapping against old wood, somewhere past the mist.', x: 1260, y: 0, w: 340, h: 70 },
   ],
   rooms: DEFAULT_ROOMS,
@@ -120,4 +120,9 @@ export const DEFAULT_WORLD: WorldConfig = {
     { id: 'w-exp', type: 'expeditions', title: 'Expeditions', size: 'small' },
   ],
   inbox: { cooldownHours: 24 },
+  modes: {
+    visitor: { title: 'Rosegarden Mode', subtitle: 'a softer internet · for brighter days', notes: ['A quieter place for curious hearts', 'Same soft people make a brighter world.', 'A softer internet for brighter days'] },
+    private: { title: 'Dollhouse Mode', subtitle: 'a private corner online', notes: ['A softer space for my thoughts', 'Still here… just a softer me.', 'Pretty thoughts for later', 'A quieter day is a kinder day'] },
+    stargirl: { title: 'Stargirl Mode', subtitle: 'a more curious internet', notes: ['Wander · explore · daydream · discover', 'Different skies, same girl', 'More beautiful places ahead'], theme: 'stargirl' },
+  },
 };

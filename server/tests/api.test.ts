@@ -174,6 +174,10 @@ test('uploads accept real images and reject disguised or scripted files', async 
   const file = await fetch(base + ok.json.data.url);
   assert.equal(file.status, 200);
   assert.match(file.headers.get('content-security-policy') ?? '', /sandbox/);
+  const saved = cookie; cookie = '';
+  assert.equal((await call('GET', '/api/items?kind=media')).json.length, 0, 'visitors cannot list the media library');
+  assert.equal((await fetch(base + ok.json.data.url)).status, 200, 'but files themselves are reachable');
+  cookie = saved;
   assert.equal((await call('POST', '/api/media', Buffer.from('<html><script>alert(1)</script>'), { 'content-type': 'application/octet-stream' })).status, 415);
   assert.equal((await call('POST', '/api/media', Buffer.from('<svg onload="alert(1)"></svg>'), { 'content-type': 'image/svg+xml' })).status, 415);
   assert.equal((await call('POST', '/api/media', Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"><circle r="4"/></svg>'), { 'content-type': 'image/svg+xml' })).status, 201);

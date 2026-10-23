@@ -5,7 +5,7 @@ import type { ThemeTokens } from './types';
 
 const baseFonts = {
   display: 'Cormorant Garamond',
-  body: 'Lora',
+  body: 'Cormorant Garamond',
   pixel: 'Pixelify Sans',
   script: 'Pinyon Script',
 };
@@ -38,7 +38,7 @@ export const COQUETTE: ThemeTokens = {
     focus: '#8a4fff',
   },
   fonts: baseFonts,
-  sizes: { base: 17, scale: 1.25 },
+  sizes: { base: 18, scale: 1.25 },
   radius: 14,
   frame: 'lace',
   button: 'pill',
@@ -106,6 +106,19 @@ export const PRESET_THEMES: ThemeTokens[] = [
     fonts: { ...baseFonts, display: 'Playfair Display', script: 'Pinyon Script' },
     texture: 'lace',
     season: 'hearts',
+  },
+  {
+    ...COQUETTE,
+    id: 'stargirl',
+    name: 'Stargirl Night',
+    colors: {
+      ...COQUETTE.colors,
+      bg: '#e9e1e2', paper: '#f8f2ec', ink: '#3b3f5c', inkSoft: '#6b6f8c', pink: '#e9bcc6', blush: '#f1dedf',
+      rose: '#c08493', roseDeep: '#8d5568', sky: '#4b5378', skyTop: '#272c4a', sage: '#9aa59a', sageDeep: '#5f6e6a',
+      water: '#6f86a8', roof: '#7d86ad', wall: '#f5ede6', window: '#ffe1a0', gold: '#c6a15f', accent: '#8a9bc4',
+    },
+    texture: 'stars',
+    season: 'fireflies',
   },
   {
     ...COQUETTE,

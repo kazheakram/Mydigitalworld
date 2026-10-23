@@ -96,6 +96,15 @@ export interface WorldConfig {
   gardenStages: { id: string; label: string; emoji?: string }[];
   dashboard: DashboardWidget[];
   inbox: { cooldownHours: number };
+  /** Names and little captions for the three modes; all editable. */
+  modes: Record<'visitor' | 'private' | 'stargirl', ModeCopy>;
+}
+
+export interface ModeCopy {
+  title: string;
+  subtitle: string;
+  notes: string[];
+  theme?: string;
 }
 
 export interface DashboardWidget {
