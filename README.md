@@ -17,6 +17,22 @@ It has three modes:
 Behind them is **the Atelier**, your design studio. It has a Canva-style map and room editor, the Theme Closet, room templates, a media library, village settings and backups.
 
 👉 **New here? Read the [Owner's Guide](docs/OWNERS_GUIDE.md).** It's written for people who don't code.
+👉 **Putting it online for free:** follow the [Cloud Setup Guide](docs/CLOUD_SETUP_GUIDE.md) (Cloudflare Pages + Firebase, no credit card).
+
+## Two ways to run Ribbonmere
+
+The same website, with all the same features and the same backup format, can run on either backend:
+
+| | **Cloud version** (recommended) | **Home-server version** |
+|---|---|---|
+| Hosting | Cloudflare Pages (free) | Any computer or VPS running Node |
+| Your data | Firebase Firestore (free Spark plan), synced across devices, works offline | One SQLite file in `data/` |
+| Sign-in | Firebase Authentication (email + password) | One owner password |
+| Feeds, previews, images | Cloudflare Pages Functions; images in Workers KV (private by default) | The Node server |
+| Privacy enforced by | Firestore security rules (tested) + owner-only functions | The Node server |
+| Set up with | [Cloud Setup Guide](docs/CLOUD_SETUP_GUIDE.md) | Quick start below |
+
+Cloudflare builds pick the cloud version automatically (`CF_PAGES` is set during their builds). `npm run dev` on your computer uses the home server, and `npm run dev:cloud` runs the full cloud version locally on the official emulators. The [migration audit](docs/MIGRATION_AUDIT.md) explains how each feature maps across and what the free tiers allow.
 
 ---
 
@@ -78,9 +94,14 @@ src/
 ## Testing
 
 ```bash
-npm test                              # 12 API tests: auth, privacy filtering, feeds, uploads, guestbook, backups
-npm run build && npm run screenshots  # end-to-end run in Chromium + screenshots into docs/screenshots
+npm test                              # home server: 12 API tests (auth, privacy, feeds, uploads, guestbook, backups)
+npm run test:rules                    # cloud: Firestore security rules on the official emulator (outsiders, other accounts, guests, owner)
+npm run build && npm run test:functions  # cloud: Pages Functions in Cloudflare's local runtime + real RS256 token checks
+npm run screenshots                   # home server: end-to-end in Chromium (17 checks) + screenshots
+npm run test:cloud                    # cloud: end-to-end in Chromium against Firebase emulators + wrangler (24 checks)
 ```
+
+The cloud end-to-end run covers signing in, seeding the village, the setup checklist, and privacy (checked against Firestore directly, not only the pages). It also covers live sync between two devices, offline editing, private-by-default images, the RSS reader through the function, the letterbox and expeditions, autosave, draft and publish, theme sync, the moderated and rate-limited guestbook, search, backups, migrating a real SQLite database, every room template, bookmarks, widgets, new rooms starting private, checkpoints, OPML, replace-restore guarded by a safety backup, password change, the phone layout and reduced motion.
 
 The end-to-end script starts a real server on a temporary data folder and exercises the main flows:
 - **Visitors:** the intro, the map, rooms, the café, and being refused at the private wing.

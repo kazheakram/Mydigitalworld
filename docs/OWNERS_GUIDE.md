@@ -2,6 +2,12 @@
 
 This guide is for you, the person who lives here. It doesn't assume you know how to code. If you can use Canva, you can run this world.
 
+> **Using the free cloud version (Cloudflare + Firebase)?** Set it up with the [Cloud Setup Guide](CLOUD_SETUP_GUIDE.md) first. Everything below works the same, except:
+> - You **sign in with your email and password**. There's no setup code.
+> - The **☁ badge** shows whether your changes have synced.
+> - New **images start private**.
+> - Restoring a backup **always makes a safety backup first**.
+
 **Contents**
 1. [Open and run the website](#1-open-and-run-the-website)
 2. [Enter your private studio (the Atelier)](#2-enter-your-private-studio)

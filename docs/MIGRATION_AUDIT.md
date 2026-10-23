@@ -1,6 +1,12 @@
 # Migration audit: free hosting on Cloudflare Pages + Firebase (Spark)
 
-*Status: proposal, waiting for approval. Nothing has been changed or removed yet.*
+*Status: **implemented** on branch `claude/cloudflare-firebase-migration` and tested. The original home-server version is unchanged and still passes all its tests. The setup steps are in [CLOUD_SETUP_GUIDE.md](CLOUD_SETUP_GUIDE.md).*
+
+**Changes from the proposal, found while building and testing:**
+- **Room bundles repair themselves.** If you close the tab right after an edit, the bundle is written as the page closes, and it's re-checked the next time you open the site.
+- **A warning when leaving mid-save.** You're asked before leaving the page while a change is still uploading.
+- **Password changes, honestly worded.** On the cloud version, other devices are asked to sign in again within about an hour, which is how Firebase works. They are not signed out instantly.
+- **The owner check is hardened.** The rules only accept a real-looking Firebase user ID, so the placeholder text can never act as the owner.
 
 ## 1. Why GitHub Pages shows a blank screen
 
