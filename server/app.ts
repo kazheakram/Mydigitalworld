@@ -10,11 +10,12 @@ import { discoverAndFetch, unfurl } from './feeds';
 import { SEED_ITEMS } from './seed';
 import { DEFAULT_WORLD } from '../shared/defaultWorld';
 import { COQUETTE } from '../shared/themes';
-import { ALWAYS_PRIVATE_KINDS, ITEM_KINDS, type Item, type ItemKind, type Visibility, type WorldConfig } from '../shared/types';
+import { ALWAYS_PRIVATE_KINDS, ITEM_KINDS, type Item, type WorldConfig } from '../shared/types';
+import { isSafeSvg, publicTheme, publicWorld, sniffImage, stripPrivateFields, validateItem, validateTheme, validateWorld, VISIBILITIES as VIS } from '../shared/logic';
+export { publicWorld };
 
 const now = () => new Date().toISOString();
 const newId = () => crypto.randomBytes(9).toString('base64url');
-const VIS: Visibility[] = ['private', 'public', 'unlisted'];
 const CONFIG_KEYS = ['world', 'theme'] as const;
 type ConfigKey = (typeof CONFIG_KEYS)[number];
 
@@ -491,74 +492,3 @@ function pruneVersions(db: DB, key: string) {
   db.prepare('DELETE FROM config_versions WHERE key = ? AND id NOT IN (SELECT id FROM config_versions WHERE key = ? ORDER BY id DESC LIMIT 40)').run(key, key);
 }
 
-/** What visitors receive: no private rooms, no owner-only or hidden objects, nothing from unrevealed regions. */
-export function publicWorld(w: WorldConfig): WorldConfig {
-  const rooms = w.rooms.filter((r) => r.visibility !== 'private');
-  const roomIds = new Set(rooms.map((r) => r.id));
-  const hiddenRegions = new Set(w.regions.filter((r) => !r.revealed).map((r) => r.id));
-  const objects = w.objects.filter((o) => !o.ownerOnly && !o.hidden && !(o.regionId && hiddenRegions.has(o.regionId)) && (!o.roomId || roomIds.has(o.roomId)));
-  return {
-    ...w,
-    objects,
-    rooms: rooms.map((r) => ({ ...r, scene: r.scene?.filter((o) => !o.hidden && !o.ownerOnly) })),
-    regions: w.regions.map((r) => (r.revealed ? r : { ...r, name: r.name })),
-    trash: [], dashboard: [], inbox: { cooldownHours: 0 },
-  };
-}
-function publicTheme(t: any) { return { active: t.active, custom: [] }; }
-
-function stripPrivateFields(it: Item): Item {
-  // Owner-only notes on otherwise public items (e.g. a book's private notes) never leave the server.
-  const { privateNotes, ...data } = it.data as any;
-  return { ...it, data };
-}
-
-function validateItem(kind: any, visibility: any, data: any, roomId: any): string | null {
-  if (!ITEM_KINDS.includes(kind as ItemKind)) return 'Unknown kind of item.';
-  if (!VIS.includes(visibility)) return 'Visibility must be private, public or unlisted.';
-  if (typeof data !== 'object' || data === null || Array.isArray(data)) return 'Item data must be an object.';
-  if (JSON.stringify(data).length > 400_000) return 'That item is too large.';
-  if (roomId !== null && (typeof roomId !== 'string' || roomId.length > 80)) return 'Invalid room.';
-  for (const key of ['url', 'link', 'href', 'image', 'cover']) {
-    const v = data[key];
-    if (v && typeof v === 'string' && !/^(https?:\/\/|\/uploads\/|mailto:)/i.test(v)) return `The ${key} must start with http:// or https://.`;
-  }
-  return null;
-}
-
-function validateWorld(w: any): string | null {
-  if (!w || typeof w !== 'object') return 'World data is missing.';
-  if (!Array.isArray(w.objects) || !Array.isArray(w.rooms) || !Array.isArray(w.regions)) return 'World data is incomplete.';
-  if (w.objects.length > 2000) return 'That is a lot of objects! Please keep it under 2000.';
-  const ids = new Set<string>();
-  for (const r of w.rooms) {
-    if (typeof r.id !== 'string' || !/^[a-z0-9-]{1,60}$/.test(r.id)) return `Room id "${r.id}" should use lowercase letters, numbers and dashes.`;
-    if (ids.has(r.id)) return `Two rooms share the id "${r.id}".`;
-    ids.add(r.id);
-  }
-  for (const o of [...w.objects, ...w.rooms.flatMap((r: any) => r.scene ?? [])]) {
-    if (['x', 'y', 'w', 'h', 'z'].some((k) => typeof o[k] !== 'number' || !isFinite(o[k]))) return 'An object has an invalid position or size.';
-    if (o.href && !/^(https?:\/\/|\/|mailto:)/.test(o.href)) return 'Object links must start with https://, mailto: or /.';
-    if (o.src && !/^(https?:\/\/|\/uploads\/)/.test(o.src)) return 'Images must be uploads or https links.';
-  }
-  return null;
-}
-function validateTheme(t: any): string | null {
-  if (!t?.active?.colors || !t?.active?.fonts) return 'Theme data is incomplete.';
-  for (const v of Object.values(t.active.colors)) if (typeof v !== 'string' || !/^(#[0-9a-f]{3,8}|rgba?\([\d\s.,%]+\))$/i.test(v)) return `"${v}" is not a colour.`;
-  for (const v of Object.values(t.active.fonts)) if (typeof v !== 'string' || !/^[\w \-']{1,60}$/.test(v)) return 'Font names may only contain letters, numbers and spaces.';
-  return null;
-}
-
-function sniffImage(b: Buffer): 'png' | 'jpg' | 'gif' | 'webp' | 'svg' | null {
-  if (b[0] === 0x89 && b.toString('ascii', 1, 4) === 'PNG') return 'png';
-  if (b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return 'jpg';
-  if (b.toString('ascii', 0, 4) === 'GIF8') return 'gif';
-  if (b.toString('ascii', 0, 4) === 'RIFF' && b.toString('ascii', 8, 12) === 'WEBP') return 'webp';
-  const head = b.toString('utf8', 0, 1000).trimStart();
-  if (/^(<\?xml[^>]*>\s*)?(<!--[\s\S]*?-->\s*)*(<!DOCTYPE svg[^>]*>\s*)?<svg[\s>]/i.test(head)) return 'svg';
-  return null;
-}
-function isSafeSvg(s: string): boolean {
-  return !/<script|<foreignObject|\son\w+\s*=|javascript:|<iframe|<embed|<object|xlink:href\s*=\s*["']\s*(?!#|data:image)|href\s*=\s*["']\s*(?!#|data:image)/i.test(s);
-}

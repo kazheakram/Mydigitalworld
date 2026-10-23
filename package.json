@@ -17,7 +17,8 @@
     "test": "tsx --test server/tests/*.test.ts",
     "screenshots": "tsx scripts/screenshots.ts",
     "predev": "node scripts/check-node.cjs",
-    "prestart": "node scripts/check-node.cjs"
+    "prestart": "node scripts/check-node.cjs",
+    "test:rules": "firebase emulators:exec --only firestore --project demo-ribbonmere \"tsx --test tests/rules.test.ts\""
   },
   "dependencies": {
     "@fontsource/cormorant-garamond": "5.1.0",
@@ -26,20 +27,25 @@
     "@fontsource/pixelify-sans": "5.1.0",
     "express": "4.21.2",
     "fast-xml-parser": "4.5.0",
+    "firebase": "12.4.0",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-router-dom": "6.28.0",
     "tsx": "4.19.2"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "4.20251008.0",
+    "@firebase/rules-unit-testing": "5.0.0",
     "@types/express": "4.17.21",
     "@types/node": "22.10.1",
     "@types/react": "18.3.12",
     "@types/react-dom": "18.3.1",
     "@vitejs/plugin-react": "4.3.4",
     "concurrently": "9.1.0",
+    "firebase-tools": "14.20.0",
     "playwright": "1.49.0",
     "typescript": "5.6.3",
-    "vite": "5.4.11"
+    "vite": "5.4.11",
+    "wrangler": "4.42.0"
   }
 }

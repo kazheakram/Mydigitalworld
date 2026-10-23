@@ -1,0 +1,103 @@
+rules_version = '2';
+
+// Ribbonmere — Firestore security rules.
+// These are the real privacy wall: they run on Google's servers, so private things can't be read
+// by visitors no matter what they type into their browser.
+//
+// Replace PASTE_YOUR_USER_ID_HERE with your Firebase user ID (the setup page shows it and can
+// copy these rules with it already filled in).
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function ownerUid() { return 'PASTE_YOUR_USER_ID_HERE'; }
+    function signedIn() { return request.auth != null; }
+    // Firebase user IDs are letters and digits; until the placeholder is replaced, nobody is the owner.
+    function isOwner() { return signedIn() && ownerUid().matches('^[A-Za-z0-9]{10,128}$') && request.auth.uid == ownerUid(); }
+
+    // Kinds that are always private, whatever their visibility field says.
+    function privateKinds() { return ['inbox', 'expedition', 'todo', 'bookmark', 'media']; }
+    function allKinds() {
+      return ['book', 'entry', 'artwork', 'music', 'note', 'bookmark', 'inbox', 'expedition',
+              'link', 'drink', 'star', 'secret', 'todo', 'guestbook', 'media', 'freeform'];
+    }
+    function publicWorld() { return get(/databases/$(database)/documents/config/world_public).data; }
+    function roomIsPublic(roomId) { return roomId == null || roomId in publicWorld().publicRoomIds; }
+
+    function validItem(d) {
+      return d.keys().hasOnly(['kind', 'roomId', 'visibility', 'data', 'createdAt', 'updatedAt'])
+        && d.kind in allKinds()
+        && d.visibility in ['private', 'public', 'unlisted']
+        && (!(d.kind in privateKinds()) || d.visibility == 'private')
+        && (d.roomId == null || (d.roomId is string && d.roomId.size() <= 80))
+        && d.data is map
+        // Owner-only fields live in items_private, never in a document a visitor could read.
+        && !('privateNotes' in d.data);
+    }
+
+    // ── content ──────────────────────────────────────────────
+    match /items/{id} {
+      // Visitors may open one public or unlisted item in a published, non-private room.
+      allow get: if isOwner()
+        || (resource.data.visibility in ['public', 'unlisted']
+            && !(resource.data.kind in privateKinds())
+            && roomIsPublic(resource.data.roomId));
+      // Listing everything is owner-only; visitors read curated room bundles instead.
+      allow list: if isOwner();
+      allow create, update: if isOwner() && validItem(request.resource.data);
+      allow delete: if isOwner();
+    }
+
+    match /items_private/{id} { allow read, write: if isOwner(); }
+
+    // Room bundles: a single public document per published room, built by the owner's app.
+    match /public_rooms/{roomId} {
+      allow get: if true;
+      allow list, write: if isOwner();
+    }
+
+    // ── world & theme ───────────────────────────────────────
+    match /config/{key} {
+      allow get: if key in ['world_public', 'theme_public'] || isOwner();
+      allow list, write: if isOwner();
+    }
+    match /versions/{id} { allow read, write: if isOwner(); }
+
+    // ── private tools ───────────────────────────────────────
+    match /feeds/{id} { allow read, write: if isOwner(); }
+    match /media/{id} { allow read, write: if isOwner(); }
+
+    // ── guestbook ───────────────────────────────────────────
+    // Visitors (signed in anonymously) can post one letter every 5 minutes. Letters stay
+    // pending — and unreadable to everyone but the owner — until approved.
+    function rateOk(uid) {
+      return !exists(/databases/$(database)/documents/gb_limits/$(uid))
+        || get(/databases/$(database)/documents/gb_limits/$(uid)).data.last < request.time - duration.value(5, 'm');
+    }
+    match /gb_limits/{uid} {
+      allow create, update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['last'])
+        && request.resource.data.last == request.time
+        && rateOk(uid);
+      allow get: if signedIn() && request.auth.uid == uid;
+      allow delete: if isOwner();
+    }
+    match /guestbook_pending/{id} {
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['name', 'message', 'stationery', 'roomId', 'uid', 'createdAt'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.name is string && request.resource.data.name.size() >= 1 && request.resource.data.name.size() <= 60
+        && request.resource.data.message is string && request.resource.data.message.size() >= 2 && request.resource.data.message.size() <= 1500
+        && !request.resource.data.message.matches('(?s).*https?://.*https?://.*https?://.*')
+        && request.resource.data.stationery is string && request.resource.data.stationery.size() <= 20
+        && request.resource.data.roomId in publicWorld().guestbookRoomIds
+        // must be written together with a fresh rate-limit stamp
+        && getAfter(/databases/$(database)/documents/gb_limits/$(request.auth.uid)).data.last == request.time;
+      allow read, delete: if isOwner();
+    }
+
+    // Everything else is closed.
+    match /{document=**} { allow read, write: if false; }
+  }
+}
