@@ -12,6 +12,10 @@ const set = (patch: Partial<SyncState>) => { state = { ...state, ...patch }; emi
 if (typeof window !== 'undefined') {
   window.addEventListener('online', () => set({ online: true }));
   window.addEventListener('offline', () => set({ online: false }));
+  // Leaving while a change is still on its way to the cloud could lose it — ask first.
+  window.addEventListener('beforeunload', (e) => {
+    if (state.pending > 0 && state.online) { e.preventDefault(); e.returnValue = ''; }
+  });
 }
 
 export function friendlyError(e: any): string {

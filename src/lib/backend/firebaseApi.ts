@@ -111,7 +111,11 @@ function startOwner() {
       }
     }
   });
-  ownerReady = Promise.all(waits).then(() => { emit('rm-items'); emit('rm-feeds'); });
+  ownerReady = Promise.all(waits).then(() => {
+    emit('rm-items'); emit('rm-feeds');
+    // Self-repair: if a previous visit closed before a room's public bundle was written, fix it now.
+    rebuildAllBundles().catch(() => {});
+  });
   ownerReady.catch(() => { /* reported via rm-sync-error */ });
 }
 function stopOwner() {
@@ -271,7 +275,15 @@ async function writeBundle(roomId: string) {
 function scheduleBundle(roomId: string | null | undefined) {
   if (!roomId) return;
   window.clearTimeout(bundleTimers.get(roomId));
-  bundleTimers.set(roomId, window.setTimeout(() => { writeBundle(roomId).catch(() => {}); }, 700));
+  bundleTimers.set(roomId, window.setTimeout(() => { bundleTimers.delete(roomId); writeBundle(roomId).catch(() => {}); }, 400));
+}
+/** Don't lose a pending room update when the tab is closed or hidden. */
+function flushBundles() {
+  for (const [roomId, t] of bundleTimers) { window.clearTimeout(t); bundleTimers.delete(roomId); writeBundle(roomId).catch(() => {}); }
+}
+if (typeof window !== 'undefined') {
+  window.addEventListener('pagehide', flushBundles);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushBundles(); });
 }
 async function rebuildAllBundles() {
   const rooms = new Set([...publicRoomIds(), ...bundles.keys()]);

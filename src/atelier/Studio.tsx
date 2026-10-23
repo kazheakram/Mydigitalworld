@@ -379,7 +379,8 @@ export function VillageSettingsPage() {
         </section>
         <section className="lace-card">
           <h2 className="script">Your key</h2>
-          <form className="item-form" onSubmit={async (e) => { e.preventDefault(); try { await api('POST', '/api/auth/password', pw); toast('Password changed. Other devices were signed out.'); setPw({ current: '', next: '' }); } catch (err: any) { toast(err.message); } }}>
+          <form className="item-form" onSubmit={async (e) => { e.preventDefault(); try { await api('POST', '/api/auth/password', pw); toast(IS_FIREBASE ? 'Password changed. Your other devices will be asked to sign in again (within about an hour).' : 'Password changed. Other devices were signed out.'); setPw({ current: '', next: '' }); } catch (err: any) { toast(err.message); } }}>
+            <input type="text" name="username" autoComplete="username" hidden readOnly value="" />
             <Field label="Current password"><input className="input" type="password" autoComplete="current-password" value={pw.current} onChange={(e) => setPw({ ...pw, current: e.target.value })} /></Field>
             <Field label="New password (8+ characters)"><input className="input" type="password" autoComplete="new-password" minLength={8} value={pw.next} onChange={(e) => setPw({ ...pw, next: e.target.value })} /></Field>
             <button className="btn small">Change password</button>
@@ -425,7 +426,8 @@ export function BackupsPage() {
   });
   const restoreVersion = async (key: 'world' | 'theme', id: number | string) => {
     if (!confirm('Load this checkpoint as your draft? You can still publish or discard it afterwards.')) return;
-    await api('POST', `/api/config/${key}/versions/${id}/restore`); toast('Checkpoint loaded as your draft.'); await refresh();
+    try { await api('POST', `/api/config/${key}/versions/${id}/restore`); toast('Checkpoint loaded as your draft.'); await refresh(); }
+    catch (e: any) { toast(`Couldn't load that checkpoint: ${e.message}`); }
   };
   const b = pending?.backup;
   return (

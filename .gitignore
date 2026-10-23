@@ -5,3 +5,7 @@ data/*
 .env
 *.log
 docs/screenshots/*.tmp.png
+dist-cloud
+ribbonmere-from-sqlite-*.json
+.wrangler-local
+.wrangler

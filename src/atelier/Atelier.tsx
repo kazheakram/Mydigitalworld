@@ -127,12 +127,15 @@ export function RoomEditorPage() {
   const { roomId } = useParams();
   const { world, saveWorld } = useStore();
   const room = world.rooms.find((r) => r.id === roomId);
-  const hist = useHistory<SceneObject[]>(room?.scene ?? []);
-  const savedRef = useRef(room?.scene ?? []);
+  const initialScene = useRef(room?.scene ?? []).current;
+  const hist = useHistory<SceneObject[]>(initialScene);
+  const savedRef = useRef(initialScene);
   const [, force] = useState(0);
   const [bg, setBg] = useState(room?.sceneBackground ?? '');
-  const dirty = hist.value !== savedRef.current || bg !== (room?.sceneBackground ?? '');
+  // Never autosave a room that isn't loaded (that could write an older copy of the village).
+  const dirty = !!room && (hist.value !== savedRef.current || bg !== (room?.sceneBackground ?? ''));
   const save = async () => {
+    if (!room) return;
     const objs = hist.value; savedRef.current = objs; force((n) => n + 1);
     await saveWorld({ ...world, rooms: world.rooms.map((r) => (r.id === roomId ? { ...r, scene: objs, sceneBackground: bg || undefined } : r)) });
   };
