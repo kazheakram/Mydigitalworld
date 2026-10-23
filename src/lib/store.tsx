@@ -37,6 +37,7 @@ interface Store {
   setSoundOn: (v: boolean) => void;
   toast: (msg: string) => void;
   toasts: { id: number; msg: string }[];
+  offline: boolean;
 }
 
 const Ctx = createContext<Store | null>(null);
@@ -66,6 +67,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [motionOff, setMotionOffState] = useState(() => readPref('rm-motion-off', window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false));
   const [soundOn, setSoundOnState] = useState(() => readPref('rm-sound', false));
+  const [offline, setOffline] = useState(false);
   const [toasts, setToasts] = useState<{ id: number; msg: string }[]>([]);
   const worldRef = useRef(world);
   worldRef.current = world;
@@ -87,6 +89,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setUnpub({ world: !!w.hasUnpublished, theme: !!t.hasUnpublished });
     } catch (e: any) {
       setSaveError(e.message);
+      setOffline(true);
     } finally {
       setReady(true);
     }
@@ -139,8 +142,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     saveState, saveError, saveWorld, updateWorld, saveTheme, previewTheme: setThemePreview, publish, discard, refresh,
     motionOff, setMotionOff: (v) => { setMotionOffState(v); writePref('rm-motion-off', v); },
     soundOn, setSoundOn: (v) => { setSoundOnState(v); writePref('rm-sound', v); },
-    toast, toasts,
-  }), [ready, auth, preview, setPreview, world, theme, themePreview, unpub, saveState, saveError, saveWorld, updateWorld, saveTheme, publish, discard, refresh, motionOff, soundOn, toast, toasts]);
+    toast, toasts, offline,
+  }), [offline, ready, auth, preview, setPreview, world, theme, themePreview, unpub, saveState, saveError, saveWorld, updateWorld, saveTheme, publish, discard, refresh, motionOff, soundOn, toast, toasts]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

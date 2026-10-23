@@ -28,8 +28,20 @@ const VillageSettingsPage = lazy(() => import('./atelier/Studio').then((m) => ({
 const BackupsPage = lazy(() => import('./atelier/Studio').then((m) => ({ default: m.BackupsPage })));
 
 function Shell() {
-  const { ready } = useStore();
+  const { ready, offline } = useStore();
   if (!ready) return <div className="boot"><Loading what="Opening the gate" /></div>;
+  if (offline) {
+    return (
+      <div className="boot">
+        <div className="paper-sheet center" style={{ maxWidth: 560 }}>
+          <p className="script big">The village server is asleep</p>
+          <p>This page loaded, but the part of Ribbonmere that stores your world isn't answering.</p>
+          <p className="muted">If you're running it yourself, start it with <code>npm run dev</code> (or <code>npm start</code> after <code>npm run build</code>) and keep that window open, then reload this page.</p>
+          <button className="btn" onClick={() => location.reload()}>Try again</button>
+        </div>
+      </div>
+    );
+  }
   return (
     <>
       <a className="skip-link" href="#main">Skip to content</a>
