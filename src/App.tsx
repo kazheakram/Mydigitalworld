@@ -7,6 +7,8 @@ import { SeasonLayer } from './world/Season';
 import { PlacesPage, WorldPage } from './world/WorldPage';
 import { RoomPage } from './rooms/RoomPage';
 import { LoginPage, NotFound, SearchPage, SharePage } from './pages';
+import { SetupPage } from './SetupPage';
+import { IS_FIREBASE } from './lib/backend/config';
 
 // Private areas load separately, so visitors never download the editor or dashboard code.
 const DollhousePage = lazy(() => import('./private/Dollhouse').then((m) => ({ default: m.DollhousePage })));
@@ -30,7 +32,18 @@ const BackupsPage = lazy(() => import('./atelier/Studio').then((m) => ({ default
 function Shell() {
   const { ready, offline } = useStore();
   if (!ready) return <div className="boot"><Loading what="Opening the gate" /></div>;
-  if (offline) {
+  if (offline && !(IS_FIREBASE && location.pathname === '/setup')) {
+    if (IS_FIREBASE) {
+      return (
+        <div className="boot">
+          <div className="paper-sheet center" style={{ maxWidth: 560 }}>
+            <p className="script big">The village can't reach the cloud</p>
+            <p>The page loaded, but Ribbonmere couldn't connect to Firebase. If you're setting the site up, the checklist shows what's missing. Otherwise, check your internet connection.</p>
+            <a className="btn" href="/setup">Open the setup checklist</a> <button className="btn ghost" onClick={() => location.reload()}>Try again</button>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="boot">
         <div className="paper-sheet center" style={{ maxWidth: 560 }}>
@@ -56,6 +69,7 @@ function Shell() {
           <Route path="/search" element={<SearchPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/share" element={<SharePage />} />
+          <Route path="/setup" element={<SetupPage />} />
           <Route path="/dollhouse" element={<DollhousePage />} />
           <Route path="/dollhouse/inbox" element={<LetterboxPage />} />
           <Route path="/dollhouse/reading" element={<ReadingRoomPage />} />

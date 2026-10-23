@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import type { Feed } from '../../shared/types';
 import { useStore } from '../lib/store';
 import { api } from '../lib/api';
@@ -6,6 +6,7 @@ import { hostOf, timeAgo } from '../lib/util';
 import { Empty, ErrorNote, Field, Loading, Modal, useAsync } from '../ui/kit';
 import { ModeShell, SectionTitle } from './Shell';
 import { quickSave } from './inboxLogic';
+import { downloadOpml } from '../lib/backup';
 
 // The Glass Conservatory: an RSS/Atom reader. Chronological, never algorithmic.
 
@@ -20,6 +21,11 @@ export function ConservatoryPage() {
   const [cat, setCat] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'unread' | 'saved'>('all');
   const entries = useAsync<Entry[]>(() => api('GET', `/api/feed-entries?${new URLSearchParams({ ...(feedId ? { feedId } : {}), ...(cat ? { category: cat } : {}), filter })}`), [feedId, cat, filter]);
+  useEffect(() => {
+    const on = () => { feeds.reload(); entries.reload(); };
+    window.addEventListener('rm-feeds', on);
+    return () => window.removeEventListener('rm-feeds', on);
+  }, [feeds.reload, entries.reload]);
   const [adding, setAdding] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [lastRefresh, setLastRefresh] = useState<string | null>(null);
@@ -75,7 +81,7 @@ export function ConservatoryPage() {
           ))}
           <div className="feed-tools">
             <label className="linkish">Import OPML<input type="file" accept=".opml,.xml,text/xml" hidden onChange={(e) => importOpml(e.target.files?.[0])} /></label>
-            {' · '}<a className="linkish" href="/api/feeds/opml">Export OPML</a>
+            {' · '}<button className="linkish" onClick={() => downloadOpml().catch((e) => toast(e.message))}>Export OPML</button>
           </div>
         </aside>
         <section className="feed-entries">

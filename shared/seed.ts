@@ -1,4 +1,4 @@
-import type { Visibility, ItemKind } from '../shared/types';
+import type { Visibility, ItemKind } from './types';
 
 // A handful of starter items so the village doesn't open empty. All of them can be edited or deleted.
 // The Webring Well links are real, long-running independent-web projects.

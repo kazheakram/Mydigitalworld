@@ -7,7 +7,7 @@ import {
   createSession, destroySession, getMeta, hashPassword, isOwner, rateLimit, requireOwner, setMeta, verifyPassword,
 } from './auth';
 import { discoverAndFetch, unfurl } from './feeds';
-import { SEED_ITEMS } from './seed';
+import { SEED_ITEMS } from '../shared/seed';
 import { DEFAULT_WORLD } from '../shared/defaultWorld';
 import { COQUETTE } from '../shared/themes';
 import { ALWAYS_PRIVATE_KINDS, ITEM_KINDS, type Item, type WorldConfig } from '../shared/types';

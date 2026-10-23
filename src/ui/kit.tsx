@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { Visibility } from '../../shared/types';
 import { useStore } from '../lib/store';
 import { items as itemsApi, uploadImage } from '../lib/api';
@@ -192,12 +192,15 @@ export function useAsync<T>(fn: () => Promise<T>, deps: unknown[]) {
   const [n, setN] = useState(0);
   useEffect(() => {
     let alive = true;
-    setState((s) => ({ ...s, loading: true }));
+    // Reloads keep showing the current data (no flicker); only a first load shows "loading".
+    setState((s) => ({ ...s, loading: s.data === null }));
     fn().then((data) => alive && setState({ data, error: null, loading: false }), (e) => alive && setState({ data: null, error: e.message, loading: false }));
     return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [...deps, n]);
-  return { ...state, reload: () => setN((x) => x + 1), set: (data: T) => setState({ data, error: null, loading: false }) };
+  const reload = useCallback(() => setN((x) => x + 1), []);
+  const set = useCallback((data: T) => setState({ data, error: null, loading: false }), []);
+  return { ...state, reload, set };
 }
 
 export const Loading = ({ what = 'Tying the ribbons' }: { what?: string }) => <div className="loading"><span className="spinner-bow" aria-hidden>🎀</span> {what}…</div>;

@@ -1,19 +1,25 @@
 import type { Item, ItemKind, Visibility } from '../../shared/types';
+import { ApiError, isPreviewingPublic, setPreviewAsPublic } from './apiCore';
+import { IS_FIREBASE } from './backend/config';
 
-// One small wrapper around fetch. All writes carry the CSRF header the server requires.
+// One small wrapper for every data request. With the original Node server it calls the server's
+// API; on Cloudflare Pages + Firebase the same requests are answered by backend/firebaseApi.ts.
+// All writes to the Node server carry the CSRF header it requires.
 
-let previewAsPublic = false;
-export const setPreviewAsPublic = (v: boolean) => { previewAsPublic = v; };
-export const isPreviewingPublic = () => previewAsPublic;
-
-export class ApiError extends Error { constructor(public status: number, message: string) { super(message); } }
+export { ApiError, isPreviewingPublic, setPreviewAsPublic };
+const previewAsPublic = () => isPreviewingPublic();
+const loadFirebase = () => import('./backend/firebaseApi');
 
 function withPreview(url: string) {
-  if (!previewAsPublic) return url;
+  if (!previewAsPublic()) return url;
   return url + (url.includes('?') ? '&' : '?') + 'as=public';
 }
 
 export async function api<T = any>(method: string, url: string, body?: unknown, extraHeaders: Record<string, string> = {}): Promise<T> {
+  if (IS_FIREBASE) {
+    const { firebaseApi } = await loadFirebase();
+    return firebaseApi(method, url, body, extraHeaders) as Promise<T>;
+  }
   const isRaw = body instanceof Blob || body instanceof ArrayBuffer || typeof body === 'string';
   let res: Response;
   try {

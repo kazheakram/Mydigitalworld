@@ -81,7 +81,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const refresh = useCallback(async () => {
     try {
       const status = await api<{ owner: boolean; needsSetup: boolean }>('GET', '/api/auth/status');
-      setAuth(status);
+      setAuth({ owner: status.owner, needsSetup: status.needsSetup });
       const [w, t] = await Promise.all([api('GET', '/api/config/world'), api('GET', '/api/config/theme')]);
       const ownerView = status.owner && !!w.draft;
       setWorld(normaliseWorld(ownerView ? w.draft : w.published));
@@ -96,6 +96,25 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => { refresh(); }, [refresh]);
+  useEffect(() => {
+    // Cloud version: react to sign-in changes, edits made on another device, and sync problems.
+    const onAuth = () => { refresh(); };
+    const onRemote = async (e: Event) => {
+      const key = (e as CustomEvent).detail as 'world' | 'theme';
+      try {
+        const c = await api('GET', `/api/config/${key}`);
+        if (!c.draft) return;
+        if (key === 'world') setWorld(normaliseWorld(c.draft)); else setTheme(c.draft);
+        setUnpub((u) => ({ ...u, [key]: !!c.hasUnpublished }));
+        toast(key === 'world' ? 'Your village was updated from another device ♡' : 'Your theme was updated from another device ♡');
+      } catch { /* the sync badge reports problems */ }
+    };
+    const onError = (e: Event) => toast(String((e as CustomEvent).detail));
+    window.addEventListener('rm-auth', onAuth);
+    window.addEventListener('rm-remote', onRemote);
+    window.addEventListener('rm-sync-error', onError);
+    return () => { window.removeEventListener('rm-auth', onAuth); window.removeEventListener('rm-remote', onRemote); window.removeEventListener('rm-sync-error', onError); };
+  }, [refresh, toast]);
   useEffect(() => { applyTheme((themePreview ?? theme).active, motionOff); }, [theme, themePreview, motionOff]);
 
   const persist = useCallback(async (key: 'world' | 'theme', body: unknown) => {

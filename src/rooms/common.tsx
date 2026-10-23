@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Item, ItemKind, Room } from '../../shared/types';
 import { items as itemsApi } from '../lib/api';
 import { useAsync, Modal } from '../ui/kit';
@@ -9,7 +9,16 @@ import { useStore } from '../lib/store';
 export interface TemplateProps { room: Room }
 
 export function useItems<D = any>(kind: ItemKind, roomId?: string) {
-  return useAsync<Item<D>[]>(() => itemsApi.list<D>(kind, roomId), [kind, roomId]);
+  const res = useAsync<Item<D>[]>(() => itemsApi.list<D>(kind, roomId), [kind, roomId]);
+  // Cloud version: refresh when anything changes — on this device or on another one.
+  const reload = res.reload;
+  useEffect(() => {
+    let t = 0;
+    const on = () => { window.clearTimeout(t); t = window.setTimeout(reload, 120); };
+    window.addEventListener('rm-items', on);
+    return () => { window.removeEventListener('rm-items', on); window.clearTimeout(t); };
+  }, [reload]);
+  return res;
 }
 
 /** Add/edit modal wiring shared by every template. */

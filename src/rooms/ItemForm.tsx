@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type { Item, ItemKind, Visibility } from '../../shared/types';
 import { KINDS, type FieldDef } from './schema';
 import { Field, ImagePicker, Stars, VisibilityPicker } from '../ui/kit';
@@ -14,11 +14,36 @@ export function ItemForm({ kind, item, roomId, ctx = {}, onSaved, onCancel, onDe
 }) {
   const def = KINDS[kind]!;
   const { toast } = useStore();
-  const [data, setData] = useState<Record<string, any>>(() => ({ ...(initial ?? {}), ...(item?.data ?? {}) }));
-  const [vis, setVis] = useState<Visibility>(item?.visibility ?? def.defaultVisibility);
+  // New items keep an unsaved draft on this device until they're saved, so nothing typed is lost.
+  const draftKey = item ? null : `rm-draft:${kind}:${roomId ?? ''}`;
+  const savedDraft = (() => { try { return draftKey ? JSON.parse(localStorage.getItem(draftKey) ?? 'null') : null; } catch { return null; } })();
+  const [data, setData] = useState<Record<string, any>>(() => ({ ...(initial ?? {}), ...(savedDraft?.data ?? {}), ...(item?.data ?? {}) }));
+  const [vis, setVis] = useState<Visibility>(item?.visibility ?? savedDraft?.vis ?? def.defaultVisibility);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const set = (k: string, v: any) => setData((d) => ({ ...d, [k]: v }));
+  const [restored, setRestored] = useState(!!savedDraft);
+  const [autoState, setAutoState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const touched = useRef(false);
+  const set = (k: string, v: any) => { touched.current = true; setData((d) => ({ ...d, [k]: v })); };
+  const setVisTouched = (v: Visibility) => { touched.current = true; setVis(v); };
+  const requiredOk = def.fields.every((f) => !f.required || String(data[f.key] ?? '').trim());
+
+  useEffect(() => {
+    if (!touched.current) return;
+    if (draftKey) {
+      try { localStorage.setItem(draftKey, JSON.stringify({ data, vis })); } catch { /* storage full or blocked */ }
+      return;
+    }
+    // Existing items autosave a moment after you stop typing.
+    if (!item || !requiredOk) return;
+    const t = window.setTimeout(async () => {
+      setAutoState('saving');
+      try { await itemsApi.update(item.id, { data, visibility: vis, replace: true }); setAutoState('saved'); }
+      catch (e: any) { setAutoState('error'); setErr(`Autosave failed: ${e.message}`); }
+    }, 1500);
+    return () => window.clearTimeout(t);
+  }, [data, vis]); // eslint-disable-line react-hooks/exhaustive-deps
+  const forgetDraft = () => { if (draftKey) try { localStorage.removeItem(draftKey); } catch { /* ignore */ } };
   const alwaysPrivate = kind === 'bookmark';
 
   const fetchPreview = async () => {
@@ -38,6 +63,7 @@ export function ItemForm({ kind, item, roomId, ctx = {}, onSaved, onCancel, onDe
       const saved = item
         ? await itemsApi.update(item.id, { data, visibility: vis, replace: true })
         : await itemsApi.create(kind, data, { roomId: roomId ?? null, visibility: vis });
+      forgetDraft();
       onSaved(saved);
       toast(item ? 'Saved ♡' : `Your ${def.noun} is saved ♡`);
     } catch (e: any) { setErr(e.message); }
@@ -53,15 +79,23 @@ export function ItemForm({ kind, item, roomId, ctx = {}, onSaved, onCancel, onDe
 
   return (
     <form className="item-form" onSubmit={submit}>
+      {restored && (
+        <p className="draft-note" role="status">
+          ✎ We kept the {def.noun} you started earlier on this device.{' '}
+          <button type="button" className="linkish" onClick={() => { forgetDraft(); setData({ ...(initial ?? {}) }); setVis(def.defaultVisibility); setRestored(false); touched.current = false; }}>Start fresh instead</button>
+        </p>
+      )}
       {def.fields.map((f) => <FieldInput key={f.key} f={f} value={data[f.key]} onChange={(v) => set(f.key, v)} ctx={ctx} onUrlBlur={f.type === 'url' && f.key === 'url' ? fetchPreview : undefined} />)}
       {alwaysPrivate
         ? <p className="muted">🔒 Bookmarks are always private.</p>
-        : <Field group label="Who can see this"><VisibilityPicker value={vis} onChange={setVis} /></Field>}
+        : <Field group label="Who can see this"><VisibilityPicker value={vis} onChange={setVisTouched} /></Field>}
       {err && <p className="error-note" role="alert">{err}</p>}
       <div className="form-actions">
         <button className="btn" disabled={busy}>{busy ? 'Saving…' : 'Save'}</button>
-        <button type="button" className="btn ghost" onClick={onCancel}>Cancel</button>
+        <button type="button" className="btn ghost" onClick={onCancel}>{item ? 'Close' : 'Cancel'}</button>
         {item && onDeleted && <button type="button" className="btn danger" onClick={remove}>Delete</button>}
+        {item && <span className="muted autosave" role="status">{autoState === 'saving' ? 'autosaving…' : autoState === 'saved' ? 'autosaved ✓' : autoState === 'error' ? '⚠ autosave failed' : 'changes save automatically'}</span>}
+        {!item && touched.current && <span className="muted autosave">draft kept on this device until you save</span>}
       </div>
     </form>
   );

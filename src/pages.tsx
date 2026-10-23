@@ -8,8 +8,13 @@ import { TopNav } from './ui/Nav';
 import { BowIcon, Empty, Field, Loading, VisBadge } from './ui/kit';
 import { titleOf } from './rooms/schema';
 import { quickSave } from './private/inboxLogic';
+import { IS_FIREBASE, FIREBASE_CONFIG } from './lib/backend/config';
 
 export function LoginPage() {
+  return IS_FIREBASE ? <CloudLogin /> : <ServerLogin />;
+}
+
+function ServerLogin() {
   const { needsSetup, refresh, owner } = useStore();
   const nav = useNavigate();
   const [pw, setPw] = useState('');
@@ -27,27 +32,87 @@ export function LoginPage() {
     finally { setBusy(false); }
   };
   return (
+    <LoginFrame title={needsSetup ? 'Make this world yours' : 'The private wing'} sub={needsSetup ? 'first-time setup' : 'only the owner may pass'} onSubmit={submit}>
+      {needsSetup && (
+        <Field label="Setup code" hint="It was printed in the terminal (or server log) when the site started. Or set OWNER_PASSWORD before starting.">
+          <input className="input" value={code} onChange={(e) => setCode(e.target.value)} autoComplete="one-time-code" required />
+        </Field>
+      )}
+      <Field label={needsSetup ? 'Choose a password (8+ characters)' : 'Password'}>
+        <input className="input" type="password" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete={needsSetup ? 'new-password' : 'current-password'} required minLength={needsSetup ? 8 : 1} autoFocus />
+      </Field>
+      {err && <p className="error-note" role="alert">{err}</p>}
+      <button className="btn" disabled={busy}>{busy ? 'Untying the ribbon…' : needsSetup ? 'Open the door' : 'Step inside'}</button>
+    </LoginFrame>
+  );
+}
+
+function LoginFrame({ title, sub, onSubmit, children }: { title: string; sub: string; onSubmit: (e: FormEvent) => void; children: React.ReactNode }) {
+  return (
     <div className="page login-page">
       <div className="ribbon-curtain left" aria-hidden /><div className="ribbon-curtain right" aria-hidden />
       <main className="page-main narrow">
-        <form className="paper-sheet login-card" onSubmit={submit}>
+        <form className="paper-sheet login-card" onSubmit={onSubmit}>
           <BowIcon size={70} />
-          <h1 className="script">{needsSetup ? 'Make this world yours' : 'The private wing'}</h1>
-          <p className="smallcaps">{needsSetup ? 'first-time setup' : 'only the owner may pass'}</p>
-          {needsSetup && (
-            <Field label="Setup code" hint="It was printed in the terminal (or server log) when the site started. Or set OWNER_PASSWORD before starting.">
-              <input className="input" value={code} onChange={(e) => setCode(e.target.value)} autoComplete="one-time-code" required />
-            </Field>
-          )}
-          <Field label={needsSetup ? 'Choose a password (8+ characters)' : 'Password'}>
-            <input className="input" type="password" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete={needsSetup ? 'new-password' : 'current-password'} required minLength={needsSetup ? 8 : 1} autoFocus />
-          </Field>
-          {err && <p className="error-note" role="alert">{err}</p>}
-          <button className="btn" disabled={busy}>{busy ? 'Untying the ribbon…' : needsSetup ? 'Open the door' : 'Step inside'}</button>
+          <h1 className="script">{title}</h1>
+          <p className="smallcaps">{sub}</p>
+          {children}
           <Link to="/" className="back-link">← back to the village</Link>
         </form>
       </main>
     </div>
+  );
+}
+
+/** Cloud version: sign in with email + password (Firebase). First visit: create the owner account. */
+function CloudLogin() {
+  const { needsSetup, refresh, owner } = useStore();
+  const nav = useNavigate();
+  const [mode, setMode] = useState<'signin' | 'create'>(needsSetup ? 'create' : 'signin');
+  const [email, setEmail] = useState('');
+  const [pw, setPw] = useState('');
+  const [err, setErr] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { if (owner) nav('/dollhouse'); }, [owner, nav]);
+  const submit = async (e: FormEvent) => {
+    e.preventDefault(); setBusy(true); setErr(null); setInfo(null);
+    try {
+      const r = await api('POST', mode === 'create' ? '/api/auth/setup' : '/api/auth/login', { email, password: pw });
+      await refresh();
+      nav(r?.uid && (mode === 'create' || r.setup) ? '/setup' : '/dollhouse');
+    } catch (e: any) { setErr(e.message); }
+    finally { setBusy(false); }
+  };
+  const forgot = async () => {
+    if (!email) { setErr('Type your email address first.'); return; }
+    try { await api('POST', '/api/auth/reset', { email }); setInfo('A password-reset email is on its way (check your spam folder too).'); }
+    catch (e: any) { setErr(e.message); }
+  };
+  if (!FIREBASE_CONFIG) {
+    return (
+      <LoginFrame title="Almost ready" sub="the cloud isn't connected yet" onSubmit={(e) => e.preventDefault()}>
+        <p>This copy of Ribbonmere doesn't know which Firebase project to use yet. Add <code>VITE_FIREBASE_CONFIG</code> in Cloudflare Pages and deploy again — the setup guide shows exactly where.</p>
+        <Link className="btn" to="/setup">Open the setup checklist</Link>
+      </LoginFrame>
+    );
+  }
+  return (
+    <LoginFrame title={mode === 'create' ? 'Make this world yours' : 'The private wing'} sub={mode === 'create' ? 'create your owner account' : 'only the owner may pass'} onSubmit={submit}>
+      {mode === 'create' && <p className="muted">This creates your private account in your own Firebase project. Then the setup page shows the one value to copy into Cloudflare so the site knows you're the owner.</p>}
+      <Field label="Email"><input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required autoFocus /></Field>
+      <Field label={mode === 'create' ? 'Choose a password (8+ characters)' : 'Password'}>
+        <input className="input" type="password" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete={mode === 'create' ? 'new-password' : 'current-password'} required minLength={mode === 'create' ? 8 : 1} />
+      </Field>
+      {err && <p className="error-note" role="alert">{err}</p>}
+      {info && <p className="muted" role="status">{info}</p>}
+      <button className="btn" disabled={busy}>{busy ? 'Untying the ribbon…' : mode === 'create' ? 'Create my account' : 'Step inside'}</button>
+      <p className="muted">
+        {mode === 'signin'
+          ? <><button type="button" className="linkish" onClick={forgot}>Forgot your password?</button>{needsSetup && <> · <button type="button" className="linkish" onClick={() => setMode('create')}>First time? Create the owner account</button></>}</>
+          : <button type="button" className="linkish" onClick={() => setMode('signin')}>I already have an account</button>}
+      </p>
+    </LoginFrame>
   );
 }
 

@@ -678,3 +678,15 @@ textarea.input { min-height: auto; resize: vertical; line-height: 1.6; }
 
 .save-anywhere { margin-top: 2rem; } .save-anywhere summary { cursor: pointer; }
 .bookmarklet { display: block; word-break: break-all; padding: .6rem; margin: .4rem 0; background: var(--c-cream); border-radius: 8px; }
+.restore-steps ol { padding-left: 0; list-style: none; display: flex; flex-direction: column; gap: .6rem; }
+.sync-badge { font-size: .74rem; padding: .15rem .55rem; border-radius: 99px; white-space: nowrap; align-self: center; font-family: var(--font-pixel); }
+.sync-ok { background: color-mix(in srgb, var(--c-sage) 45%, var(--c-paper)); color: var(--c-ink); }
+.sync-saving { background: var(--c-blush); color: var(--c-ink); }
+.sync-offline { background: var(--c-cream); color: var(--c-inkSoft); border: 1px dashed var(--c-rose); }
+.sync-error { background: color-mix(in srgb, var(--c-roseDeep) 18%, var(--c-paper)); color: var(--c-roseDeep); }
+.setup-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: .7rem; }
+.setup-list li { display: grid; grid-template-columns: 2rem 1fr; gap: .4rem; align-items: start; }
+.setup-mark { font-size: 1.2rem; }
+.setup-code { display: block; white-space: pre-wrap; word-break: break-all; max-height: 260px; overflow: auto; padding: .7rem; margin: .4rem 0; background: var(--c-cream); border-radius: 8px; font-size: .78rem; }
+.draft-note { background: var(--c-blush); padding: .5rem .8rem; border-radius: 8px; }
+.autosave { font-size: .82rem; }

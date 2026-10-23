@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { Item, Room, RoomTemplate, ThemeTokens } from '../../shared/types';
 import { FONT_CHOICES, PRESET_THEMES } from '../../shared/themes';
 import { useStore } from '../lib/store';
 import { api, items as itemsApi, uploadImage } from '../lib/api';
+import { IS_FIREBASE } from '../lib/backend/config';
+import { downloadBackup, downloadOpml, readBackupFile, restoreBackup, type Backup } from '../lib/backup';
 import { contrast } from '../lib/theme';
 import { clone, prettyDate, slug, uid } from '../lib/util';
 import { Field, Loading, VisibilityPicker, useAsync } from '../ui/kit';
@@ -33,7 +35,13 @@ export function ThemeClosetPage() {
   const [dirty, setDirty] = useState(false);
   const edit = (next: ThemeTokens) => { setT(next); setDirty(true); previewTheme({ ...theme, active: next }); };
   const setColor = (k: string, v: string) => edit({ ...t, colors: { ...t.colors, [k]: v } });
-  const save = async () => { await saveTheme({ ...theme, active: t }); setDirty(false); toast('Theme saved as a draft ♡'); };
+  const save = async (quiet = false) => { await saveTheme({ ...theme, active: t }); setDirty(false); if (!quiet) toast('Theme saved as a draft ♡'); };
+  // Autosave: a couple of seconds after you stop adjusting, the theme is saved as a draft.
+  useEffect(() => {
+    if (!dirty) return;
+    const timer = window.setTimeout(() => { save(true).catch(() => {}); }, 2500);
+    return () => window.clearTimeout(timer);
+  }, [t, dirty]); // eslint-disable-line react-hooks/exhaustive-deps
   const saveAsCustom = async () => {
     const name = prompt('Name your theme:', t.name.startsWith('My ') ? t.name : `My ${t.name}`);
     if (!name) return;
@@ -68,7 +76,7 @@ export function ThemeClosetPage() {
             ))}
           </div>
           <div className="row wrap gap">
-            <button className="btn" onClick={save} disabled={!dirty}>{dirty ? 'Save theme' : 'Saved'}</button>
+            <button className="btn" onClick={() => save()} disabled={!dirty}>{dirty ? 'Save theme' : 'Saved ✓'}</button>
             <button className="btn" onClick={async () => { if (dirty) await save(); await publish('theme'); }} disabled={!dirty && !themeUnpublished}>Publish</button>
             <button className="btn ghost" onClick={saveAsCustom}>Save as my own theme</button>
             {dirty && <button className="btn ghost" onClick={() => { setT(clone(theme.active)); setDirty(false); previewTheme(null); }}>Cancel changes</button>}
@@ -264,7 +272,11 @@ export function MediaLibraryPage() {
           <Field label="Save into"><select className="input" value={cat} onChange={(e) => setCat(e.target.value)}>{MEDIA_CATS.map((c) => <option key={c}>{c}</option>)}</select></Field>
           <label className="btn">{busy ? 'Uploading…' : 'Choose images'}<input type="file" multiple accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml" hidden onChange={(e) => upload(e.target.files)} /></label>
         </div>
-        <p className="muted">Uploaded files are served from your site so visitors can see them on public pages. Their addresses are random and unguessable, but don't upload anything you'd never want shared.</p>
+        {IS_FIREBASE ? (
+          <p className="muted">New uploads are <strong>private</strong>: only your signed-in browser can see them. When you use an image on something public (a public book, artwork, or the published village), it becomes public automatically so visitors can see it. You can switch any image back and forth below.</p>
+        ) : (
+          <p className="muted">Uploaded files are served from your site so visitors can see them on public pages. Their addresses are random and unguessable, but don't upload anything you'd never want shared.</p>
+        )}
       </section>
       <div className="row wrap gap filters">
         <button className={`chip ${!filter ? 'on' : ''}`} onClick={() => setFilter(null)}>all</button>
@@ -278,6 +290,12 @@ export function MediaLibraryPage() {
             <figcaption>
               <input className="input" value={m.data.name} aria-label="Name" onChange={(e) => media.set((media.data ?? []).map((x) => (x.id === m.id ? { ...x, data: { ...x.data, name: e.target.value } } : x)))} onBlur={(e) => itemsApi.update(m.id, { data: { name: e.target.value } })} />
               <select className="input" value={m.data.category} aria-label="Category" onChange={async (e) => { await itemsApi.update(m.id, { data: { category: e.target.value, decoration: true } }); media.reload(); }}>{MEDIA_CATS.map((c) => <option key={c}>{c}</option>)}</select>
+              {IS_FIREBASE && (
+                <select className="input" value={m.data.visibility === 'public' ? 'public' : 'private'} aria-label="Who can see this image"
+                  onChange={async (e) => { try { await itemsApi.update(m.id, { visibility: e.target.value as any }); toast(e.target.value === 'public' ? 'Visitors can see this image now.' : 'This image is private again (it can take up to 5 minutes to disappear from caches).'); media.reload(); } catch (err: any) { toast(err.message); } }}>
+                  <option value="private">🔒 private</option><option value="public">🌷 public</option>
+                </select>
+              )}
               <span className="row"><button className="btn small ghost" onClick={() => navigator.clipboard?.writeText(location.origin + m.data.url).then(() => toast('Link copied'))}>Copy link</button>
                 <button className="btn small danger" onClick={async () => { if (confirm('Delete this image? Anywhere it is used will show an empty frame.')) { await itemsApi.remove(m.id); media.reload(); } }}>Delete</button></span>
             </figcaption>
@@ -293,7 +311,15 @@ export function VillageSettingsPage() {
   const { world, saveWorld, toast, theme } = useStore();
   const [w, setW] = useState(() => clone(world));
   const [pw, setPw] = useState({ current: '', next: '' });
-  const save = async () => { await saveWorld({ ...world, name: w.name, tagline: w.tagline, introEnabled: w.introEnabled, introText: w.introText, modes: w.modes, gardenStages: w.gardenStages, regions: w.regions }); toast('Saved as a draft — publish to share it.'); };
+  const save = async (quiet = false) => { await saveWorld({ ...world, name: w.name, tagline: w.tagline, introEnabled: w.introEnabled, introText: w.introText, modes: w.modes, gardenStages: w.gardenStages, regions: w.regions }); setChanged(false); if (!quiet) toast('Saved as a draft — publish to share it.'); };
+  const [changed, setChanged] = useState(false);
+  const first = useRef(true);
+  useEffect(() => {
+    if (first.current) { first.current = false; return; }
+    setChanged(true);
+    const timer = window.setTimeout(() => { save(true).catch(() => {}); }, 2500);
+    return () => window.clearTimeout(timer);
+  }, [w]); // eslint-disable-line react-hooks/exhaustive-deps
   const modeEditor = (k: 'visitor' | 'private' | 'stargirl', label: string) => (
     <fieldset className="color-group" key={k}>
       <legend className="smallcaps">{label}</legend>
@@ -360,7 +386,7 @@ export function VillageSettingsPage() {
           </form>
         </section>
       </div>
-      <div className="sticky-save"><button className="btn" onClick={save}>Save village settings</button></div>
+      <div className="sticky-save"><button className="btn" onClick={() => save()}>{changed ? 'Save village settings' : 'Saved ✓ (changes save automatically)'}</button></div>
     </AtelierShell>
   );
 }
@@ -368,37 +394,75 @@ export function VillageSettingsPage() {
 // ───────────── Backups ─────────────
 export function BackupsPage() {
   const { toast, refresh } = useStore();
-  const wv = useAsync<{ id: number; label: string; createdAt: string }[]>(() => api('GET', '/api/config/world/versions'), []);
-  const tv = useAsync<{ id: number; label: string; createdAt: string }[]>(() => api('GET', '/api/config/theme/versions'), []);
-  const [busy, setBusy] = useState(false);
-  const restoreFile = async (f?: File | null, mode: 'replace' | 'merge' = 'replace') => {
-    if (!f) return;
-    if (!confirm(mode === 'replace' ? 'Restore this backup, replacing everything in your world? (A checkpoint of the current settings is kept.)' : 'Merge this backup into your world?')) return;
-    setBusy(true);
-    try { await api('POST', `/api/import?mode=${mode}`, JSON.parse(await f.text())); toast('Backup restored ♡'); await refresh(); }
-    catch (e: any) { toast(e.message); }
-    finally { setBusy(false); }
+  const wv = useAsync<{ id: number | string; label: string; createdAt: string }[]>(() => api('GET', '/api/config/world/versions'), []);
+  const tv = useAsync<{ id: number | string; label: string; createdAt: string }[]>(() => api('GET', '/api/config/theme/versions'), []);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [pending, setPending] = useState<{ backup: Backup; mode: 'replace' | 'merge'; name: string } | null>(null);
+  const [safetySaved, setSafetySaved] = useState(false);
+  const [confirmed, setConfirmed] = useState(false);
+  const [result, setResult] = useState<string[] | null>(null);
+  const run = async (label: string, fn: () => Promise<unknown>) => {
+    setBusy(label);
+    try { await fn(); } catch (e: any) { toast(e.message); } finally { setBusy(null); }
   };
-  const restoreVersion = async (key: 'world' | 'theme', id: number) => {
+  const pick = async (f: File | null | undefined, mode: 'replace' | 'merge') => {
+    if (!f) return;
+    try {
+      setPending({ backup: readBackupFile(await f.text()), mode, name: f.name });
+      setSafetySaved(false); setConfirmed(false); setResult(null);
+    } catch (e: any) { toast(e.message); }
+  };
+  const safety = () => run('Saving a safety backup of your world as it is now…', async () => {
+    await downloadBackup(true, 'before-restore');
+    setSafetySaved(true);
+    toast('Safety backup downloaded ♡ Keep it until you are happy with the restore.');
+  });
+  const restore = () => pending && run('Restoring…', async () => {
+    const r = await restoreBackup(pending.backup, pending.mode, (m) => setBusy(m));
+    setResult(r.notes); setPending(null);
+    toast('Backup restored ♡');
+    await refresh();
+  });
+  const restoreVersion = async (key: 'world' | 'theme', id: number | string) => {
     if (!confirm('Load this checkpoint as your draft? You can still publish or discard it afterwards.')) return;
     await api('POST', `/api/config/${key}/versions/${id}/restore`); toast('Checkpoint loaded as your draft.'); await refresh();
   };
+  const b = pending?.backup;
   return (
     <AtelierShell>
       <div className="settings-grid">
         <section className="lace-card">
           <h2 className="script">Take your world with you</h2>
-          <p>A backup is a single JSON file with your village, rooms, theme, every item, your feed subscriptions and saved posts. Keep one somewhere safe now and then.</p>
+          <p>A backup is a single file with your village, rooms, theme, every item, your feed subscriptions and saved posts. Keep one somewhere safe now and then.</p>
           <div className="row wrap gap">
-            <a className="btn" href="/api/export" download>Download backup</a>
-            <a className="btn ghost" href="/api/export?media=1" download>…including all images</a>
-            <a className="btn ghost" href="/api/feeds/opml">Feeds as OPML</a>
+            <button className="btn" disabled={!!busy} onClick={() => run('Preparing your backup…', () => downloadBackup(false))}>Download backup</button>
+            <button className="btn ghost" disabled={!!busy} onClick={() => run('Gathering every image…', () => downloadBackup(true))}>…including all images</button>
+            <button className="btn ghost" disabled={!!busy} onClick={() => run('Exporting…', downloadOpml)}>Feeds as OPML</button>
           </div>
+          {busy && <p className="muted" role="status">{busy}</p>}
         </section>
         <section className="lace-card">
           <h2 className="script">Restore</h2>
-          <label className="btn">{busy ? 'Restoring…' : 'Restore from a backup (replace)'}<input type="file" accept=".json" hidden onChange={(e) => restoreFile(e.target.files?.[0], 'replace')} /></label>{' '}
-          <label className="btn ghost">Merge a backup in<input type="file" accept=".json" hidden onChange={(e) => restoreFile(e.target.files?.[0], 'merge')} /></label>
+          <p className="muted">Works with backups from either version of Ribbonmere (the original home server or the cloud). Nothing is replaced until you've saved a safety backup and confirmed.</p>
+          {!pending && (
+            <div className="row wrap gap">
+              <label className="btn">Restore from a backup (replace)<input type="file" accept=".json,application/json" hidden onChange={(e) => pick(e.target.files?.[0], 'replace')} /></label>
+              <label className="btn ghost">Merge a backup in<input type="file" accept=".json,application/json" hidden onChange={(e) => pick(e.target.files?.[0], 'merge')} /></label>
+            </div>
+          )}
+          {pending && b && (
+            <div className="restore-steps">
+              <p><strong>{pending.name}</strong> — made {prettyDate(b.exportedAt)} · {b.items?.length ?? 0} items · {b.feeds?.length ?? 0} subscriptions · {b.media?.length ?? 0} images.</p>
+              <p>{pending.mode === 'replace' ? 'This will replace the content that is here now with the backup.' : 'This will add the backup to what is here now (items with the same ID are overwritten).'}</p>
+              <ol>
+                <li><button className="btn small" disabled={!!busy} onClick={safety}>{safetySaved ? '✓ Safety backup saved' : '1. Download a safety backup first'}</button></li>
+                <li><label className="check"><input type="checkbox" checked={confirmed} disabled={!safetySaved} onChange={(e) => setConfirmed(e.target.checked)} /> 2. I have my safety backup file and want to continue</label></li>
+                <li><button className="btn small" disabled={!safetySaved || !confirmed || !!busy} onClick={restore}>3. {pending.mode === 'replace' ? 'Replace with this backup' : 'Merge this backup in'}</button>{' '}
+                  <button className="btn small ghost" disabled={!!busy} onClick={() => setPending(null)}>Cancel</button></li>
+              </ol>
+            </div>
+          )}
+          {result && result.length > 0 && <ul className="muted">{result.map((n, i) => <li key={i}>{n}</li>)}</ul>}
         </section>
         <section className="lace-card">
           <h2 className="script">Checkpoints</h2>

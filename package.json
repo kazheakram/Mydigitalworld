@@ -19,7 +19,8 @@
     "predev": "node scripts/check-node.cjs",
     "prestart": "node scripts/check-node.cjs",
     "test:rules": "firebase emulators:exec --only firestore --project demo-ribbonmere \"tsx --test tests/rules.test.ts\"",
-    "test:functions": "tsx --test tests/tokens.test.ts tests/functions.test.ts"
+    "test:functions": "tsx --test tests/tokens.test.ts tests/functions.test.ts",
+    "export:sqlite": "tsx scripts/export-sqlite.ts"
   },
   "dependencies": {
     "@fontsource/cormorant-garamond": "5.1.0",

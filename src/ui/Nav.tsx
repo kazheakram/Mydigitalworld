@@ -4,6 +4,8 @@ import { useStore } from '../lib/store';
 import { api } from '../lib/api';
 import { Icon } from './Icon';
 import { BowIcon } from './kit';
+import { SyncBadge } from './SyncBadge';
+import { IS_FIREBASE } from '../lib/backend/config';
 
 /** The lace-edged navigation card that floats in the top-right of every page. */
 export function TopNav({ variant = 'village' }: { variant?: 'village' | 'dollhouse' | 'stargirl' | 'atelier' }) {
@@ -22,6 +24,7 @@ export function TopNav({ variant = 'village' }: { variant?: 'village' | 'dollhou
       {owner && <NavLink to="/dollhouse" className="mode-link"><BowIcon size={20} /><span>Dollhouse</span></NavLink>}
       {owner && <NavLink to="/stargirl"><Icon name="moon" /><span>Stargirl</span></NavLink>}
       {owner && <NavLink to="/atelier"><Icon name="gear" /><span>Atelier</span></NavLink>}
+      {owner && <SyncBadge />}
       <div className="comfort">
         <button className="icon-btn" aria-expanded={comfort} aria-label="Comfort settings: motion and sound" onClick={() => setComfort(!comfort)}>☾</button>
         {comfort && (
@@ -31,6 +34,7 @@ export function TopNav({ variant = 'village' }: { variant?: 'village' | 'dollhou
             {(owner || preview) && (
               <label className="check"><input type="checkbox" checked={preview} onChange={(e) => setPreview(e.target.checked)} /> See it as a visitor</label>
             )}
+            {owner && IS_FIREBASE && <Link className="btn small ghost" to="/setup">Cloud setup</Link>}
             {owner ? (
               <button className="btn small ghost" onClick={async () => { await api('POST', '/api/auth/logout'); await refresh(); toast('Signed out. See you soon ♡'); nav('/'); }}>Sign out</button>
             ) : !preview && <Link className="btn small ghost" to="/login">Sign in</Link>}
