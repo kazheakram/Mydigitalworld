@@ -97,6 +97,7 @@ export const FEATURES: FeatureDef[] = [
   { id: 'linkPreviews', name: 'Link previews', group: 'Integrations', about: 'Fetch titles and pictures when you save a link.', defaultMode: 'on' },
   { id: 'youtubeFeeds', name: 'YouTube channel feeds', group: 'Integrations', about: 'Show videos from YouTube channels you follow in the reader and the parlour (public feeds only).', defaultMode: 'on' },
   { id: 'shareTarget', name: 'Share to Ribbonmere', group: 'Integrations', about: 'Save links from your phone’s Share menu or the bookmarklet.', defaultMode: 'on', routes: ['/share'] },
+  { id: 'bookSync', name: 'Book Tracker (Google Sheets)', group: 'Integrations', about: 'Keep the Library and your Google Sheets book tracker in step: read-only by default, two-way only when you choose. Nothing happens until you connect.', defaultMode: 'on', routes: ['/atelier/books'], nav: [{ label: 'Book Tracker', to: '/atelier/books', area: 'atelier' }], reset: { kinds: ['sheetsync'], fields: [{ kind: 'book', keys: ['sheetLink'] }], what: 'Forgets the sheet settings, the sync history and which book belongs to which row. Every book stays in your Library, and the spreadsheet itself is never touched. (To also remove Google access, press Disconnect first.)' } },
 ];
 
 export const FEATURE_BY_ID = new Map(FEATURES.map((f) => [f.id, f]));

@@ -4,8 +4,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { openDb, type DB } from './db';
 import {
-  createSession, destroySession, getMeta, hashPassword, isOwner, rateLimit, requireOwner, setMeta, verifyPassword,
+  createSession, destroySession, getMeta, hashPassword, isOwner, parseCookies, rateLimit, requireOwner, setMeta, verifyPassword,
 } from './auth';
+import { googleConfigFromEnv } from './google';
+import { createGoogleHandler, type GoogleConfig } from '../shared/googleServer';
 import { discoverAndFetch, unfurl } from './feeds';
 import { SEED_ITEMS } from '../shared/seed';
 import { DEFAULT_WORLD } from '../shared/defaultWorld';
@@ -19,7 +21,7 @@ const newId = () => crypto.randomBytes(9).toString('base64url');
 const CONFIG_KEYS = ['world', 'theme'] as const;
 type ConfigKey = (typeof CONFIG_KEYS)[number];
 
-export interface AppOptions { dataDir: string; production?: boolean; ownerPassword?: string; log?: (s: string) => void }
+export interface AppOptions { dataDir: string; production?: boolean; ownerPassword?: string; log?: (s: string) => void; google?: GoogleConfig }
 
 export function createApp(opts: AppOptions) {
   const db = openDb(opts.dataDir);
@@ -469,6 +471,27 @@ export function createApp(opts: AppOptions) {
       db.exec('ROLLBACK');
       res.status(400).json({ error: `The backup could not be restored: ${e.message}` });
     }
+  });
+
+  // ───────────── Book Tracker (Google Sheets) ─────────────
+  // The handler is shared with the cloud version; the encrypted token lives in the meta table,
+  // which is never part of a backup file.
+  const google = createGoogleHandler(opts.google ?? googleConfigFromEnv(process.env, opts.dataDir), {
+    get: async () => getMeta(db, 'google') ?? null,
+    put: async (v) => setMeta(db, 'google', v),
+    del: async () => { db.prepare("DELETE FROM meta WHERE key = 'google'").run(); },
+  });
+  app.all('/api/google/*', express.json({ limit: '2mb' }), async (req, res) => {
+    const r = await google({
+      method: req.method, route: (req.params as any)[0] ?? '', query: new URLSearchParams(req.originalUrl.split('?')[1] ?? ''), body: req.body,
+      origin: `${req.protocol}://${req.get('host')}`, cookies: parseCookies(req.headers.cookie), isOwner: !!(req as any).owner, secure: req.secure,
+    });
+    for (const [k, v] of Object.entries(r.headers ?? {})) res.setHeader(k, v);
+    if (r.cookies?.length) res.setHeader('Set-Cookie', r.cookies);
+    res.setHeader('Cache-Control', 'no-store');
+    if (r.redirect) return res.redirect(r.status, r.redirect);
+    if (r.html) return res.status(r.status).type('html').send(r.html);
+    res.status(r.status).json(r.json);
   });
 
   app.use('/api', (_req, res) => res.status(404).json({ error: 'Not found.' }));

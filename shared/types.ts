@@ -19,11 +19,13 @@ export const ITEM_KINDS = [
   'link', 'drink', 'star', 'secret', 'todo', 'guestbook', 'media', 'freeform',
   // Ribbonmere 2.0
   'pet', 'excerpt', 'film', 'memory', 'scrapbook', 'letter', 'capsule', 'edition', 'challenge', 'progress',
+  // Book Tracker sync (connection settings, sync history and open questions)
+  'sheetsync',
 ] as const;
 export type ItemKind = (typeof ITEM_KINDS)[number];
 
 /** Kinds that only ever belong to the owner and are never served to visitors. */
-export const ALWAYS_PRIVATE_KINDS: ItemKind[] = ['inbox', 'expedition', 'todo', 'bookmark', 'capsule', 'edition', 'challenge', 'progress'];
+export const ALWAYS_PRIVATE_KINDS: ItemKind[] = ['inbox', 'expedition', 'todo', 'bookmark', 'capsule', 'edition', 'challenge', 'progress', 'sheetsync'];
 
 /** A thing placed on a scene (the world map, or a freeform room). Coordinates are in scene units. */
 export interface SceneObject {

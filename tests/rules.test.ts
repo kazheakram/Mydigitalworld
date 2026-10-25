@@ -99,6 +99,9 @@ test('the owner can do everything, and the rules still guard privacy invariants'
   await assertFails(setDoc(doc(db, 'items/in2'), item({ kind: 'inbox', visibility: 'unlisted', roomId: null })));
   // …or put owner-only notes inside a readable document.
   await assertFails(setDoc(doc(db, 'items/b2'), item({ data: { title: 'x', privateNotes: 'oops' } })));
+  await assertFails(setDoc(doc(db, 'items/b2'), item({ data: { title: 'x', sheetLink: { row: 4 } } })));
+  await assertFails(setDoc(doc(db, 'items/ss1'), item({ kind: 'sheetsync', visibility: 'public', roomId: null })));
+  await assertSucceeds(setDoc(doc(db, 'items/ss1'), item({ kind: 'sheetsync', visibility: 'private', roomId: null })));
   // …or invent unknown fields/kinds.
   await assertFails(setDoc(doc(db, 'items/b3'), item({ kind: 'weird' })));
   await assertFails(setDoc(doc(db, 'items/b4'), { ...item({}), extra: 1 }));

@@ -27,8 +27,9 @@ export function publicWorld(w: WorldConfig): WorldConfig {
 }
 export const publicTheme = (t: any) => ({ active: t.active, custom: [] });
 
-/** Fields that belong to the owner only, even on a public item. */
-export const PRIVATE_FIELDS = ['privateNotes'] as const;
+/** Fields that belong to the owner only, even on a public item. `sheetLink` ties a book to its row
+ *  in the owner's Google Sheets book tracker. */
+export const PRIVATE_FIELDS = ['privateNotes', 'sheetLink'] as const;
 export function splitPrivate(data: Record<string, any>) {
   const pub: Record<string, any> = { ...data };
   const priv: Record<string, any> = {};

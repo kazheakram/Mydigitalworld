@@ -17,11 +17,12 @@ service cloud.firestore {
 
     // Kinds that are always private, whatever their visibility field says.
     // Keep in step with ITEM_KINDS / ALWAYS_PRIVATE_KINDS in shared/types.ts (a test checks this).
-    function privateKinds() { return ['inbox', 'expedition', 'todo', 'bookmark', 'media', 'capsule', 'edition', 'challenge', 'progress']; }
+    function privateKinds() { return ['inbox', 'expedition', 'todo', 'bookmark', 'media', 'capsule', 'edition', 'challenge', 'progress', 'sheetsync']; }
     function allKinds() {
       return ['book', 'entry', 'artwork', 'music', 'note', 'bookmark', 'inbox', 'expedition',
               'link', 'drink', 'star', 'secret', 'todo', 'guestbook', 'media', 'freeform',
-              'pet', 'excerpt', 'film', 'memory', 'scrapbook', 'letter', 'capsule', 'edition', 'challenge', 'progress'];
+              'pet', 'excerpt', 'film', 'memory', 'scrapbook', 'letter', 'capsule', 'edition', 'challenge', 'progress',
+              'sheetsync'];
     }
     function publicWorld() { return get(/databases/$(database)/documents/config/world_public).data; }
     function roomIsPublic(roomId) { return roomId == null || roomId in publicWorld().publicRoomIds; }
@@ -34,7 +35,8 @@ service cloud.firestore {
         && (d.roomId == null || (d.roomId is string && d.roomId.size() <= 80))
         && d.data is map
         // Owner-only fields live in items_private, never in a document a visitor could read.
-        && !('privateNotes' in d.data);
+        && !('privateNotes' in d.data)
+        && !('sheetLink' in d.data);
     }
 
     // ── content ──────────────────────────────────────────────

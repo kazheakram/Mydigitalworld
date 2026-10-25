@@ -14,6 +14,19 @@ export interface Env {
   AUTH_EMULATOR?: string;
   /** Only for local tests: lets the feed fetcher reach localhost fixtures. */
   ALLOW_PRIVATE_FETCH?: string;
+  /** Book Tracker (Google Sheets) — all optional; see the Owner's Guide. */
+  GOOGLE_CLIENT_ID?: string;
+  GOOGLE_CLIENT_SECRET?: string;
+  GOOGLE_API_KEY?: string;
+  GOOGLE_APP_ID?: string;
+  GOOGLE_REDIRECT_URI?: string;
+  /** Encrypts the stored Google token (falls back to MEDIA_SECRET). */
+  GOOGLE_TOKEN_SECRET?: string;
+  /** Only for local tests against a fake Google. Never set these in production. */
+  GOOGLE_TEST_AUTH_URL?: string;
+  GOOGLE_TEST_TOKEN_URL?: string;
+  GOOGLE_TEST_REVOKE_URL?: string;
+  GOOGLE_TEST_API_BASE?: string;
 }
 
 export function settings(env: Env) {
