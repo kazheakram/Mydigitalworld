@@ -19,6 +19,7 @@ const SCENES: Record<string, Piece[]> = {
   newspaper: [['teacup', 120, 70, 70, 60], ['letter', 20, 30, 110, 90], ['star', 150, 15, 30, 30]],
   parlour: [['armchair', 10, 40, 100, 100], ['candle', 120, 50, 40, 80], ['moon', 150, 10, 40, 40]],
   journal: [['books', 10, 50, 90, 90], ['bookshelf', 100, 10, 90, 130]],
+  commonplace: [['books', 20, 50, 90, 90], ['letter', 100, 30, 90, 75], ['flowerpot', 150, 90, 45, 55]],
   scrapbook: [['frame', 20, 20, 80, 90], ['stamp', 100, 40, 60, 75], ['heart', 150, 15, 40, 40], ['butterfly', 120, 95, 40, 40]],
   letters: [['letter', 20, 40, 110, 90], ['stamp', 120, 20, 60, 75], ['bow', 60, 15, 50, 40]],
   capsules: [['chest', 30, 40, 110, 100], ['star', 140, 20, 30, 30], ['moon', 160, 50, 30, 30]],

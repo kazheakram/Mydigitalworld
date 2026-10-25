@@ -36,6 +36,10 @@ const FeatureManagerPage = lazy(() => import('./atelier/FeatureManager').then((m
 const BedroomPage = lazy(() => import('./private/Bedroom').then((m) => ({ default: m.BedroomPage })));
 const PetsPage = lazy(() => import('./private/Pets').then((m) => ({ default: m.PetsPage })));
 const CompanionLayer = lazy(() => import('./private/Pets').then((m) => ({ default: m.CompanionLayer })));
+const NewspaperPage = lazy(() => import('./private/Newspaper').then((m) => ({ default: m.NewspaperPage })));
+const ParlourPage = lazy(() => import('./private/Parlour').then((m) => ({ default: m.ParlourPage })));
+const ReadingJournalPage = lazy(() => import('./private/ReadingJournal').then((m) => ({ default: m.ReadingJournalPage })));
+const CommonplacePage = lazy(() => import('./private/CommonplacePage').then((m) => ({ default: m.CommonplacePage })));
 const BackupsPage = lazy(() => import('./atelier/Studio').then((m) => ({ default: m.BackupsPage })));
 
 /** The following companion only loads for the owner when the Pets feature is on. */
@@ -114,6 +118,10 @@ function Shell() {
           <Route path="/dollhouse/favorites" element={<ConservatoryPage />} />
           <Route path="/dollhouse/bedroom" element={<BedroomPage />} />
           <Route path="/dollhouse/pets" element={<PetsPage />} />
+          <Route path="/dollhouse/newspaper" element={<NewspaperPage />} />
+          <Route path="/dollhouse/parlour" element={<ParlourPage />} />
+          <Route path="/dollhouse/reading-journal" element={<ReadingJournalPage />} />
+          <Route path="/dollhouse/commonplace" element={<CommonplacePage />} />
           <Route path="/stargirl" element={<StargirlPage />} />
           <Route path="/stargirl/rabbit-holes" element={<RabbitHolesPage />} />
           <Route path="/stargirl/discoveries" element={<DiscoveriesPage />} />

@@ -160,6 +160,7 @@ const TEMPLATE_INFO: { id: RoomTemplate; name: string; about: string; art: strin
   { id: 'postoffice', name: 'Post office', about: 'Guestbook and contact links', art: 'postoffice' },
   { id: 'secret', name: 'Secret room', about: 'Hidden notes to discover', art: 'chest' },
   { id: 'welcome', name: 'Welcome room', about: 'An introduction and guide', art: 'cottage' },
+  { id: 'commonplace', name: 'Commonplace book', about: 'Quotations, excerpts and reflections with their sources', art: 'townhouse' },
 ];
 
 export function RoomsManagerPage() {

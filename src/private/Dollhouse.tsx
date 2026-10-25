@@ -29,6 +29,7 @@ export const DOLLHOUSE_CARDS: { title: string; caption: string; to: string; v: s
   { title: 'Morning Paper', caption: 'today’s edition', to: '/dollhouse/newspaper', v: 'newspaper', feature: 'newspaper' },
   { title: 'Video Parlour', caption: 'channels · saved videos', to: '/dollhouse/parlour', v: 'parlour', feature: 'parlour' },
   { title: 'Reading Journal', caption: 'history · wrap-ups', to: '/dollhouse/reading-journal', v: 'journal', feature: 'readingJournal' },
+  { title: 'Commonplace Book', caption: 'words worth keeping', to: '/dollhouse/commonplace', v: 'commonplace', feature: 'commonplace' },
   { title: 'Scrapbook', caption: 'pages of little things', to: '/dollhouse/scrapbook', v: 'scrapbook', feature: 'scrapbook' },
   { title: 'Letters', caption: 'stationery · seals', to: '/dollhouse/letters', v: 'letters', feature: 'letters' },
   { title: 'Time Capsules', caption: 'for a future day', to: '/dollhouse/capsules', v: 'capsules', feature: 'capsules' },

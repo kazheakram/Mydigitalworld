@@ -27,6 +27,10 @@ This guide is for you, the person who lives here. It doesn't assume you know how
 16. [Companions](#16-companions)
 17. [My Bedroom](#17-my-bedroom)
 18. [Weather, light and little interactions](#18-weather-light-and-little-interactions)
+19. [The Morning Paper](#19-the-morning-paper)
+20. [The Video Parlour](#20-the-video-parlour)
+21. [The Reading Journal](#21-the-reading-journal)
+22. [The Commonplace Book](#22-the-commonplace-book)
 
 ---
 
@@ -283,6 +287,65 @@ These live in *Atelier → Features → World & Atmosphere*:
 - **Little interactions:** tap the fountain for a splash, trees and rose bushes for falling petals, and lamp posts to switch them off and on. Tap a bunny, deer or swan for a hop and a heart.
 
 All three are switched off in Quiet mode. Resting them turns them off for everyone after you publish. Buildings and rooms always keep working. Visitors only ever receive the weather and light choice, never any other setting.
+
+## 19. The Morning Paper
+
+*Dollhouse → ✿ more rooms → Newspaper.*
+
+The first time you open it each day, the paper prints itself from the blogs and newsletters you follow in **Favorites**:
+- The newest posts are set as a little broadsheet, with a lead story and sections for each category.
+- Each blog gets at most two stories, so no single blog fills the paper.
+- YouTube videos stay in the Video Parlour.
+
+Using it:
+- **Reading:** click a headline to open it. That marks it read here *and* in the reader. *Save* keeps it in the reader's Saved list.
+- **Paper settings:** rename your paper, choose how many stories it has (4–30) and whether it uses category sections, and choose whether posts you've already read are included.
+- **Print a fresh edition** reprints today's paper with the newest posts.
+- **The archive** lists past editions. Click a date to read it again, even after the posts have left their feeds.
+
+Hiding, resting and resetting:
+- Hiding or resting it never touches your subscriptions.
+- **Reset** deletes the archive of editions only. Your feeds and saved posts stay.
+- Editions are private and are included in backups.
+
+## 20. The Video Parlour
+
+*Dollhouse → ✿ more rooms → Video Parlour.*
+
+- **Channels:** follow a YouTube channel in **Favorites** by pasting its channel link. Its new videos appear here as little television sets.
+- **Watching:** press ▶ to watch. Videos play through YouTube's privacy-enhanced player (`youtube-nocookie.com`).
+- **Watch later and ♥:** these keep a video on your shelves.
+- **While a video is open:** write **notes**, put it in a **playlist** (type a new name or pick an existing one), and tick *watched*.
+- **Saving by link:** paste any YouTube link into *Paste a YouTube link* to save it.
+- **Finding videos:** the shelves are Watch later, Favourites, Everything saved, and one shelf per playlist. Use the search box to search them.
+- **Where saved videos live:** they are ordinary bookmarks in the **"Video Parlour"** collection, so they also appear in the Cabinet and in every backup.
+- **Switching it off:** resting the Parlour, or switching off *YouTube channel feeds* under Integrations, never deletes a saved video.
+
+## 21. The Reading Journal
+
+*Dollhouse → ✿ more rooms → Reading Journal.*
+
+The journal is worked out from the books already on your library shelves, so there's nothing new to keep up with. For the richest pages, fill in these fields in a book's form: **Started on / Finished on**, **Genre**, **Series** and its number, **Format** (paper, e-book, audio), **Margin notes**, a **Review** and **Favourite quotes**.
+
+- **The year:** books finished, pages, average hearts, authors, genres, a month-by-month chart, your most-loved book and your longest.
+- **Monthly wrap-up:** pick a month to see what you finished, with a favourite quote from each book.
+- **History:** every finished book, newest first.
+- **Series:** books with the same series name, in order. Read ones are crossed through.
+- **Reviews & notes:** your reviews, margin notes and quotes in one place.
+- **Gentle challenges** are optional. You set a target in books, pages, different authors or different genres for a year. There are no deadlines, streaks or reminders, and *let it go* removes a challenge at any time.
+
+The Bookshop's books (coming in a later phase) are kept separate from these statistics. **Reset** deletes challenges only; your books are never touched.
+
+## 22. The Commonplace Book
+
+*Dollhouse → ✿ more rooms → Commonplace Book.* Press **Open a commonplace book** the first time.
+
+- **+ A new entry:** fill in the words, the kind (quote, excerpt, passage, reflection, idea), the source, author and page, an optional link, your reflection, and tags.
+- **Linking:** an entry can link to one of your own books, journal pages or notes. Start typing in *Linked to one of my things*.
+- **Finding entries:** search across words, sources and tags, or filter by kind, tag or ♥ favourites.
+- **Export as text:** downloads the entries you're looking at as a tidy text (Markdown) file you can keep or print.
+- **Privacy:** it is a room underneath, and it starts **private**. To share it, change its visibility in *Atelier → Rooms* and give it a building on the map. Each entry also has its own visibility.
+- **Reset** deletes commonplace entries only.
 
 ---
 
