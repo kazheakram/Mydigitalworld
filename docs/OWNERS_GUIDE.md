@@ -38,6 +38,7 @@ This guide is for you, the person who lives here. It doesn't assume you know how
 27. [The Rabbit-hole Map](#27-the-rabbit-hole-map)
 28. [Paths beyond the village](#28-paths-beyond-the-village)
 29. [Charms, pearls and the Games Parlour](#29-charms-pearls-and-the-games-parlour)
+30. [Your Google Sheets book tracker](#30-your-google-sheets-book-tracker)
 
 ---
 
@@ -478,6 +479,135 @@ No game is ever needed to open any room or page.
 - Resetting achievements keeps your pearls.
 - Resetting pearls clears pearls and charms but keeps achievements.
 - Resetting games clears game results and kept bouquets.
+
+
+## 30. Your Google Sheets book tracker
+
+*Atelier → Book Tracker* links your Library with the book tracker you keep in Google Sheets ("My book tracker <3"). Then you can update a book in either place without typing it twice. It's optional, and nothing happens until you connect.
+
+### What it will and won't do
+
+**What it does:**
+- Imported books are **ordinary Library books**. They sit on your shelves, open as book spreads, count toward your reading goal and appear in the Reading Journal. You can edit them like any other book.
+- It starts **read-only**: Ribbonmere reads your sheet and never changes it. **Two-way** is a separate choice you make later.
+
+**What it never does:**
+- It never changes your sheet's layout, formulas, formatting, other tabs, or the Dashboard and Series Tracker.
+- It never deletes a row in your sheet, or a book in Ribbonmere. A book whose row has disappeared is only **flagged** (a filter, the wrong tab or a slow connection look exactly the same as a deleted row).
+- It never overwrites something you changed in both places. You get a **question** with both versions side by side instead.
+- It never empties a filled cell, in either direction, without asking you first.
+
+**What stays in Ribbonmere only:**
+- secret messages;
+- shelf order and cloth colours;
+- bookshop notes, links and "recommended by";
+- anything you mark *Stays in the sheet*.
+
+### Setting up Google (once, about 15 minutes, free)
+
+You need a free Google Cloud project. No card is needed for these APIs.
+
+1. **Create the project.** Go to <https://console.cloud.google.com/>, then **Select a project → New project**. Call it `Ribbonmere` and click **Create**.
+2. **Switch on three APIs.** In **APIs & Services → Library**, search for each one and click **Enable**:
+   - **Google Sheets API**
+   - **Google Drive API**
+   - **Google Picker API**
+3. **Set up the consent screen.** Open **APIs & Services → OAuth consent screen** (on newer accounts, **Google Auth Platform → Branding / Audience**).
+   - Choose **External**.
+   - Fill in the app name (`Ribbonmere`), your email as support and developer contact, and your site's address.
+   - Under **Data access** (or **Scopes**), add only `…/auth/drive.file`. It means "see and edit only the files you open with this app". Google treats it as a non-sensitive permission.
+   - Under **Audience**, add your own Google account as a test user. Then choose **Publish app / In production**.
+
+   > **Why "In production" matters:** in *Testing* mode, Google makes the connection expire every 7 days. If Google asks you to verify the app anyway, you can stay in Testing and press *Connect Google* again whenever the panel says access has expired. Nothing is lost when that happens.
+4. **Create the OAuth client.** Open **Credentials → Create credentials → OAuth client ID**.
+   - Type: **Web application**.
+   - **Authorised JavaScript origins:** your site, e.g. `https://ribbonmere.pages.dev`.
+   - **Authorised redirect URIs:** `https://ribbonmere.pages.dev/api/google/callback`. The Book Tracker panel shows the exact address for your site.
+   - Copy the **Client ID** and **Client secret**.
+5. **Create the key for the picker.** In **Credentials → Create credentials → API key**:
+   - Click **Restrict key**.
+   - Under *Application restrictions*, choose **Websites** and add `https://ribbonmere.pages.dev/*`.
+   - Under *API restrictions*, choose **Google Picker API**.
+   - Copy the key.
+6. **Note your project number.** It's on the project's **Dashboard** (or **IAM & Admin → Settings**). It's a long number. Google calls it the *App ID*.
+7. **Add these to Cloudflare.** Go to **Workers & Pages → ribbonmere → Settings → Variables and Secrets**:
+
+   | Name | Value | Type |
+   |---|---|---|
+   | `GOOGLE_CLIENT_ID` | the Client ID | Text |
+   | `GOOGLE_CLIENT_SECRET` | the Client secret | **Secret** |
+   | `GOOGLE_API_KEY` | the restricted API key | Text |
+   | `GOOGLE_APP_ID` | the project number | Text |
+   | `GOOGLE_TOKEN_SECRET` | optional: a long random phrase. Without it, `MEDIA_SECRET` is used | **Secret** |
+
+   Then **redeploy** (Deployments → ⋯ → Retry deployment).
+
+   On the home-server version, set the same names as environment variables before `npm start`. Without `GOOGLE_TOKEN_SECRET`, a key is created in the data folder as `google.key`.
+
+**Where things are kept:**
+- **The client secret and your Google access** stay on the server, never in the website's code. On the cloud, your access is encrypted in your KV storage. At home, it's encrypted in the database. Neither is ever part of a backup file.
+- **Cost:** the Sheets and Drive APIs are free at this size. A sync is three small reads, and automatic syncs happen at most every 15 minutes, only while you have Ribbonmere open.
+
+### Connecting and the first import
+
+1. **Connect.** Open *Atelier → Book Tracker* and press **Connect Google**. Google asks you to let Ribbonmere use only the files you choose.
+2. **Choose the spreadsheet.** Press **Pick from Google Drive** and choose *My book tracker <3*. Google only lets Ribbonmere open files picked this way.
+3. **Choose the tab.** Pick *Tracker*. Ribbonmere finds your header row under the *TODAY IS* and *BOOK DETAILS / YOUR REVIEW* banners and suggests a meaning for each column:
+
+   | Your column | In Ribbonmere |
+   |---|---|
+   | BOOK TITLE, AUTHOR, GENRE, SERIES NAME | the same |
+   | STATUS | the shelf: *Finished* → Read, *Started* → Currently Reading (you can change these) |
+   | STARTING DATE, FINISH DATE | started on, finished on (`24 Oct 25` is read correctly) |
+   | FORMAT | *Kindle 💻* → E-book, *Book 📚* → Paper, *Audiobook 🎧* → Audiobook |
+   | CURRENT PAGE / TIME, TOTAL PAGE / TIME | pages, or time for audiobooks (`11:27:00`) |
+   | PART NUMBER | number in series, and how many books (`2/6`) |
+   | STAR RATING ⭐, SPICE 🌶️ | hearts and spice, counted from the emoji, and written back the same way |
+   | FAVORITE | the favourite tick |
+   | BRIEF REVIEW, FAVORITE QUOTE, FAVORITE MOMENT, BOOK SUMMARY, FAVORITE CHARACTER, NOTES | review, quotes, favourite moment, summary, favourite character, margin notes |
+   | COVER | read only, from `=IMAGE("…")` cells |
+   | NO., PAGES / TIME LEFT, PROGRESS | **left alone:** they're your formulas |
+   | PRICE | **stays in the sheet** (you can change this) |
+
+   Any column can be set to *Both ways*, *Sheet → Ribbonmere only* or *Stays in the sheet*. Columns made by a formula can only be read.
+4. **Preview.** Press **Preview the import**. You'll see:
+   - how many books would be added;
+   - which existing Library books match (they're **linked, not duplicated**);
+   - rows that look like the same book twice (a re-read), which you can skip;
+   - anything that's different in the two places.
+
+   Nothing has changed yet.
+5. **Import.** First download a Ribbonmere backup (the button is right there), then press **Import**. Imported books are **private** unless you chose *public*.
+
+### Keeping them in step
+
+- **When:** *Automatically* (at most every 15 minutes while Ribbonmere is open in your browser) or *Manual* (only when you press **Sync now**).
+- **Direction:**
+  - **Read-only:** sheet changes come into Ribbonmere. Changes you make in Ribbonmere stay in Ribbonmere.
+  - **Two-way:** edits on either side are carried over, one cell at a time.
+    - It unlocks after a clean sync, and it needs a **backup copy of your spreadsheet in Google Drive**. The panel makes the copy for you, and the original is not touched.
+    - Before writing each cell, Ribbonmere checks that the row still holds the same book and that the cell hasn't changed since it looked. If either check fails, nothing is written and it looks again next time.
+    - When you first switch two-way on, edits you made in Ribbonmere while read-only are carried into the sheet too. *Preview the next sync* shows them first.
+    - Books that are in your Library but not in the sheet can be added on request (*Add them to the sheet*). They go into the empty rows at the bottom of your tracker, so your formulas there keep working.
+- **Questions for you:**
+  - *Changed in both places* shows both versions. Choose **Use the sheet's** or **Keep Ribbonmere's**.
+  - *Emptied in one place* asks before emptying the other.
+  - *Not found in the sheet* lists books whose row is gone. They stay in your Library, and you can unlink them if the rows were removed on purpose.
+- **Safety stops:** if your header row or columns move, or the sheet suddenly shows far fewer books than before, the sync stops and changes nothing until you've looked.
+
+### Switching it off
+
+- **Disconnect Google:** Ribbonmere forgets its access and asks Google to withdraw it. Every book stays exactly as it is, and the sheet isn't touched. You can connect again later and carry on.
+- **Feature Manager → Book Tracker:**
+  - **Hidden** takes it out of the Atelier tabs.
+  - **Resting** stops all syncing. Nothing is deleted either way.
+  - **Reset** forgets the column choices, the history and which book belongs to which row. Every book stays in the Library, and the spreadsheet is never touched.
+
+### Good to know
+
+- **One tab at a time.** Only the tab you choose (*Tracker*) syncs. *Wishlist* and *TBR* are left alone for now.
+- **Covers inserted as pictures inside cells** (Insert → Image → *in cell*) can't be read by Google's API. `=IMAGE("https://…")` covers can.
+- **Backups:** a Ribbonmere backup includes each book's link to its row, so a restored Library carries on syncing. It never includes your Google access.
 
 ---
 

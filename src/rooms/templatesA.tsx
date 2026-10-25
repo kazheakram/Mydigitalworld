@@ -51,7 +51,7 @@ export function WelcomeRoom({ room }: P) {
 }
 
 // ───────────── Library ─────────────
-interface Book { title: string; author?: string; shelf?: string; cover?: string; color?: string; rating?: number; pagesRead?: number; pages?: number; finishedOn?: string; review?: string; quotes?: string[]; recommendedBy?: string; link?: string; secretMessage?: string; privateNotes?: string; order?: number }
+interface Book { title: string; author?: string; shelf?: string; cover?: string; color?: string; rating?: number; pagesRead?: number; pages?: number; finishedOn?: string; review?: string; quotes?: string[]; recommendedBy?: string; spice?: number; favorite?: boolean; audioListened?: string; audioLength?: string; series?: string; seriesNumber?: number; seriesTotal?: number; summary?: string; favoriteMoment?: string; favoriteCharacter?: string; link?: string; secretMessage?: string; privateNotes?: string; order?: number }
 const SPINE_COLORS = ['#d88f9d', '#e9bcc6', '#a7bccd', '#c9a36a', '#b9c9a8', '#9c5465', '#f4d6c6'];
 
 export function LibraryRoom({ room }: P) {
@@ -159,6 +159,9 @@ function BookSpread({ book, onEdit }: { book: Item<Book>; onEdit: () => void }) 
         {b.cover ? <img className="book-cover" src={b.cover} alt={`Cover of ${b.title}`} /> : <div className="cloth-cover" style={{ ['--spine' as any]: b.color ?? '#d88f9d' }}><span className="script">{b.title}</span></div>}
         <p className="smallcaps">{b.author}</p>
         {!!b.rating && <Stars value={b.rating} />}
+        {(!!b.spice || b.favorite) && <p className="muted">{b.favorite && <span>♡ a favourite</span>}{b.favorite && !!b.spice && ' · '}{!!b.spice && <span aria-label={`spice ${b.spice}`}>{'🌶️'.repeat(Math.min(b.spice, 5))}</span>}</p>}
+        {b.series && <p className="muted">{b.series}{b.seriesNumber ? ` · book ${b.seriesNumber}${b.seriesTotal ? ` of ${b.seriesTotal}` : ''}` : ''}</p>}
+        {pct === null && b.audioLength && <p className="smallcaps">🎧 {b.audioListened ? `${b.audioListened} / ` : ''}{b.audioLength}</p>}
         {pct !== null && (
           <div className="progress-block">
             <span className="smallcaps">{b.pagesRead ?? 0} / {b.pages} pages · {pct}%</span>
@@ -172,6 +175,9 @@ function BookSpread({ book, onEdit }: { book: Item<Book>; onEdit: () => void }) 
       <div className="book-page right">
         {b.review ? <Prose text={b.review} /> : <p className="muted hand">No review written yet.</p>}
         {b.quotes?.map((q, i) => <blockquote key={i}>{q}</blockquote>)}
+        {b.summary && <><p className="smallcaps">summary</p><Prose text={b.summary} /></>}
+        {b.favoriteMoment && <><p className="smallcaps">favourite moment</p><Prose text={b.favoriteMoment} /></>}
+        {b.favoriteCharacter && <p className="muted">favourite character: {b.favoriteCharacter}</p>}
         {b.secretMessage && (
           <button className="pressed-flower" onClick={() => setSecret(!secret)} aria-expanded={secret} aria-label="A pressed flower is tucked between the pages">❀</button>
         )}

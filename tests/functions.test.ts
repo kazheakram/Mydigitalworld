@@ -8,6 +8,7 @@ import type { AddressInfo } from 'node:net';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { startFakeGoogle, fakeGoogleEnv, TRACKER_ID, type FakeGoogle } from '../server/tests/fixtures/fakeGoogle';
 
 const OWNER = 'Ow9nerUid0000000000000000000a';
 const STRANGER = 'SomeoneElse0000000000000000a';
@@ -17,6 +18,7 @@ const BASE = `http://localhost:${PORT}`;
 let wrangler: ChildProcess;
 let fixture: http.Server;
 let fixtureBase = '';
+let google: FakeGoogle;
 const state = fs.mkdtempSync(path.join(os.tmpdir(), 'rm-wrangler-'));
 
 // Same shape as the Firebase Auth emulator's tokens (unsigned), accepted only because AUTH_EMULATOR=1.
@@ -35,11 +37,13 @@ before(async () => {
     else { res.statusCode = 404; res.end(); }
   }).listen(0);
   fixtureBase = `http://127.0.0.1:${(fixture.address() as AddressInfo).port}`;
+  google = await startFakeGoogle();
+  const gEnv = Object.entries(fakeGoogleEnv(google.url)).filter(([k]) => k !== 'GOOGLE_TOKEN_SECRET').flatMap(([k, v]) => ['--binding', `${k}=${v}`]);
   wrangler = spawn('npx', ['wrangler', 'pages', 'dev', 'dist', '--port', String(PORT), '--kv', 'MEDIA', '--persist-to', state,
     '--compatibility-date=2025-09-01',
     '--binding', `VITE_FIREBASE_CONFIG={"apiKey":"k","projectId":"${PROJECT}"}`,
     '--binding', `VITE_OWNER_UID=${OWNER}`, '--binding', 'MEDIA_SECRET=test-secret-that-is-long-enough-123',
-    '--binding', 'AUTH_EMULATOR=1', '--binding', 'ALLOW_PRIVATE_FETCH=1'],
+    '--binding', 'AUTH_EMULATOR=1', '--binding', 'ALLOW_PRIVATE_FETCH=1', ...gEnv],
   { env: { ...process.env, WRANGLER_SEND_METRICS: 'false' }, stdio: ['ignore', 'pipe', 'pipe'], detached: true });
   await new Promise<void>((resolve, reject) => {
     const t = setTimeout(() => reject(new Error('wrangler did not start')), 90_000);
@@ -49,6 +53,7 @@ before(async () => {
 after(() => {
   try { process.kill(-wrangler.pid!, 'SIGTERM'); } catch { /* already gone */ }
   fixture?.close();
+  void google?.close();
   fs.rmSync(state, { recursive: true, force: true });
 });
 
@@ -135,4 +140,44 @@ test('the website itself is served, with single-page fallback for deep links', a
   const deep = await fetch(`${BASE}/room/library`);
   assert.equal(deep.status, 200);
   assert.match(await deep.text(), /<div id="root">/);
+});
+
+test('Book Tracker: owner-only, OAuth with a signed state and cookie, sealed token in KV, guarded writes', async () => {
+  assert.equal((await fetch(`${BASE}/api/google/status`)).status, 401);
+  assert.equal((await fetch(`${BASE}/api/google/status`, { headers: auth(STRANGER) })).status, 403);
+  const st = await (await fetch(`${BASE}/api/google/status`, { headers: auth() })).json();
+  assert.equal(st.configured, true);
+  assert.equal(st.connected, false);
+  // Connect: the state cookie set for this browser must come back with Google's answer.
+  const c = await post('/api/google/connect', {}, auth());
+  const cookie = c.headers.getSetCookie().find((x) => x.startsWith('rm_gstate='))!.split(';')[0];
+  const url = (await c.json()).url as string;
+  assert.equal(new URL(url).searchParams.get('scope'), 'https://www.googleapis.com/auth/drive.file');
+  const back = new URL((await fetch(url, { redirect: 'manual' })).headers.get('location')!);
+  const without = await fetch(`${BASE}${back.pathname}${back.search}`, { redirect: 'manual' });
+  assert.match(without.headers.get('location')!, /reason=state/);
+  const done = await fetch(`${BASE}${back.pathname}${back.search}`, { redirect: 'manual', headers: { cookie } });
+  assert.equal(done.headers.get('location'), '/atelier/books?google=connected');
+  const now = await (await fetch(`${BASE}/api/google/status`, { headers: auth() })).json();
+  assert.equal(now.connected, true);
+  assert.equal(JSON.stringify(now).includes('rt-'), false);
+  // The KV entry can't be fetched as an image.
+  assert.equal((await fetch(`${BASE}/media/g%3Aconnection`)).status, 404);
+  // Read the tracker; writing stays off until two-way + backup.
+  assert.equal((await post('/api/google/select', { spreadsheet: TRACKER_ID }, auth())).status, 200);
+  const grid = await (await post('/api/google/read', { gid: 1234 }, auth())).json();
+  assert.equal(grid.rows[2][1].v, 'BOOK TITLE');
+  const w = { gid: 1234, writes: [{ row: 5, col: 19, value: 'x', input: 'RAW', expect: 'Soft and salty.', guard: { col: 1, expect: 'Lanterns at Low Tide' } }] };
+  assert.equal((await post('/api/google/write', w, auth())).status, 403);
+  assert.equal((await post('/api/google/writes', { allow: true }, auth())).status, 409);
+  assert.equal((await post('/api/google/backup', {}, auth())).status, 200);
+  assert.equal((await post('/api/google/writes', { allow: true }, auth())).status, 200);
+  const r = await (await post('/api/google/write', { ...w, writes: [w.writes[0], { ...w.writes[0], guard: { col: 1, expect: 'Someone else' } }] }, auth())).json();
+  assert.deepEqual(r.results.map((x: any) => x.ok), [true, false]);
+  // Disconnect revokes and forgets.
+  assert.deepEqual(await (await post('/api/google/disconnect', {}, auth())).json(), { ok: true, revoked: true });
+  assert.equal((await (await fetch(`${BASE}/api/google/status`, { headers: auth() })).json()).connected, false);
+  // The picker popup is served with its own strict policy (Pages headers don't apply to functions).
+  const picker = await fetch(`${BASE}/api/google/picker`);
+  assert.match(picker.headers.get('content-security-policy')!, /default-src 'none'/);
 });

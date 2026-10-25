@@ -13,6 +13,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import assert from 'node:assert/strict';
+import { startFakeGoogle, fakeGoogleEnv, type FakeGoogle } from '../server/tests/fixtures/fakeGoogle';
 
 const PROJECT = 'demo-ribbonmere';
 const PORT = 8898;
@@ -46,6 +47,7 @@ const fsValue = (v: any): any => v === null || v === undefined ? { nullValue: nu
 
 let browser: Browser | undefined;
 let fixture: http.Server | undefined;
+let google: FakeGoogle | undefined;
 try {
   console.log('Starting Firebase emulators…');
   await start('npx', ['firebase', 'emulators:start', '--only', 'auth,firestore', '--project', PROJECT], /All emulators ready/);
@@ -63,10 +65,12 @@ try {
   const firebaseConfig = JSON.stringify({ apiKey: 'demo-key', authDomain: `${PROJECT}.firebaseapp.com`, projectId: PROJECT, appId: '1:1:web:1' });
   execSync('npx vite build --outDir dist-cloud --emptyOutDir', { stdio: 'ignore', env: { ...process.env, VITE_BACKEND: 'firebase', VITE_FIREBASE_CONFIG: firebaseConfig, VITE_OWNER_UID: OWNER, VITE_USE_EMULATORS: '1' } });
   fixture = http.createServer((_req, res) => { res.setHeader('content-type', 'application/rss+xml'); res.end('<?xml version="1.0"?><rss version="2.0"><channel><title>Fixture</title></channel></rss>'); }).listen(0);
+  google = await startFakeGoogle(); // a local stand-in for Google, shaped like the owner's tracker
+  const gBind = Object.entries(fakeGoogleEnv(google.url)).filter(([k]) => k !== 'GOOGLE_TOKEN_SECRET').flatMap(([k, v]) => ['--binding', `${k}=${v}`]);
   console.log('Starting Cloudflare Pages (wrangler)…');
   await start('npx', ['wrangler', 'pages', 'dev', 'dist-cloud', '--port', String(PORT), '--kv', 'MEDIA', '--persist-to', path.join(work, 'kv'),
     '--compatibility-date=2025-09-01', '--binding', `VITE_FIREBASE_CONFIG=${firebaseConfig}`, '--binding', `VITE_OWNER_UID=${OWNER}`,
-    '--binding', 'MEDIA_SECRET=e2e-secret-value-that-is-long-enough', '--binding', 'AUTH_EMULATOR=1', '--binding', 'ALLOW_PRIVATE_FETCH=1'],
+    '--binding', 'MEDIA_SECRET=e2e-secret-value-that-is-long-enough', '--binding', 'AUTH_EMULATOR=1', '--binding', 'ALLOW_PRIVATE_FETCH=1', ...gBind],
   /Ready on/, { WRANGLER_SEND_METRICS: 'false' });
 
   browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH ?? '/opt/pw-browsers/chromium' });
@@ -133,7 +137,7 @@ try {
   };
 
   const { sections } = await import('./e2e-v2-sections');
-  const all = sections({ o, v, BASE, browser, shot, enter, api, step, ownerCtx, visitorCtx, seedFeeds, cloud: true } as any);
+  const all = sections({ o, v, BASE, browser, shot, enter, api, step, ownerCtx, visitorCtx, seedFeeds, cloud: true, google } as any);
   for (const [name, fn] of Object.entries(all)) {
     if (only.length && !only.includes(name)) continue;
     console.log(`— ${name}`);
@@ -149,5 +153,6 @@ try {
 } finally {
   await browser?.close().catch(() => {});
   fixture?.close();
+  await google?.close();
   stopAll();
 }

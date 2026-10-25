@@ -171,7 +171,7 @@ test('a plan from the real handler output round-trips: a Ribbonmere edit lands i
   const m = suggestMapping(grid, ['Read', 'Currently Reading']);
   const config = { spreadsheetId: TRACKER_ID, spreadsheetName: 'x', gid: 1234, sheetTitle: 'Tracker', headerRow: m.headerRow, columns: m.columns, roomId: 'library', visibility: 'private' as const };
   const first = planSync({ config, grid, books: [], twoWay: true });
-  const books = first.creates.map((c, i) => ({ id: `b${i}`, roomId: 'library', data: { ...c.data, sheetLink: c.link } }));
+  const books = first.creates.map((c, i) => ({ id: `b${i}`, roomId: 'library', data: { ...c.data, sheetLink: c.link } as Record<string, any> }));
   books.find((b) => b.data.title === 'Paper Swans')!.data.spice = 4;
   const plan = planSync({ config, grid, books, twoWay: true });
   assert.equal(plan.writes.length, 1);

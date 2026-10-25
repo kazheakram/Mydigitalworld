@@ -40,9 +40,16 @@ function stopAll() { for (const p of procs) { try { process.kill(-p.pid!, 'SIGTE
 
 /** Read Firestore directly as an administrator (emulator only) to check what really got stored. */
 async function adminList(col: string): Promise<{ id: string; f: any }[]> {
-  const r = await fetch(`${FS}/${col}?pageSize=500`, { headers: { authorization: 'Bearer owner' } });
-  const j = await r.json();
-  return (j.documents ?? []).map((d: any) => ({ id: d.name.split('/').pop(), f: d.fields }));
+  // Firestore pages long lists, so follow every page (a single page can silently leave documents out).
+  const out: { id: string; f: any }[] = [];
+  let token = '';
+  do {
+    const r = await fetch(`${FS}/${col}?pageSize=300${token ? `&pageToken=${encodeURIComponent(token)}` : ''}`, { headers: { authorization: 'Bearer owner' } });
+    const j = await r.json();
+    for (const d of j.documents ?? []) out.push({ id: d.name.split('/').pop(), f: d.fields });
+    token = j.nextPageToken ?? '';
+  } while (token);
+  return out;
 }
 const title = (f: any) => f?.data?.mapValue?.fields?.title?.stringValue;
 

@@ -1,7 +1,7 @@
 import type { Browser, BrowserContext, Page } from 'playwright';
 import assert from 'node:assert/strict';
 
-interface T { o: Page; v: Page; BASE: string; browser: Browser; ownerCtx: BrowserContext; visitorCtx: BrowserContext; shot: (p: Page, n: string) => Promise<any>; enter: (p: Page) => Promise<void>; api: (p: Page, m: string, u: string, b?: any) => Promise<any>; step: (s: string) => void }
+interface T { google?: any; cloud?: boolean; o: Page; v: Page; BASE: string; browser: Browser; ownerCtx: BrowserContext; visitorCtx: BrowserContext; shot: (p: Page, n: string) => Promise<any>; enter: (p: Page) => Promise<void>; api: (p: Page, m: string, u: string, b?: any) => Promise<any>; step: (s: string) => void }
 
 export function sections(t: T): Record<string, () => Promise<void>> {
   const { o, v, BASE, shot, enter, step } = t;
@@ -954,7 +954,7 @@ export function sections(t: T): Record<string, () => Promise<void>> {
     },
     polish: async () => {
       const pages = ['/dollhouse', '/dollhouse/pets', '/dollhouse/bedroom', '/dollhouse/newspaper', '/dollhouse/parlour', '/dollhouse/reading-journal', '/dollhouse/commonplace',
-        '/dollhouse/scrapbook', '/dollhouse/letters', '/dollhouse/capsules', '/dollhouse/charms', '/stargirl/map', '/paths', '/atelier/features'];
+        '/dollhouse/scrapbook', '/dollhouse/letters', '/dollhouse/capsules', '/dollhouse/charms', '/stargirl/map', '/paths', '/atelier/features', '/atelier/books'];
       // Rooms and content so the room templates are audited with real things in them.
       await o.goto(`${BASE}/dollhouse`);
       const cfg = await t.api(o, 'GET', '/api/config/world');
@@ -1080,6 +1080,204 @@ export function sections(t: T): Record<string, () => Promise<void>> {
       assert.equal(pub.published.features?.weather?.settings?.choice, undefined, 'weather reset to follow the season');
       assert.equal(pub.published.features?.daynight?.settings?.choice, 'golden', 'unrelated feature settings untouched');
       step('Quiet and resting switch atmosphere off without touching buildings; resetting weather leaves the light alone');
+    },
+
+    tracker: async () => {
+      // The Book Tracker against a local fake Google shaped like the owner's real "Tracker" tab.
+      const g = t.google;
+      assert.ok(g, 'the fake Google is running');
+      const { TRACKER_ID } = await import('../server/tests/fixtures/fakeGoogle');
+      const tab = () => g.sheets.get(TRACKER_ID).tabs.find((x: any) => x.title === 'Tracker');
+      const books = async () => ((await t.api(o, 'GET', '/api/items?kind=book')) as any[]);
+      const linked = async () => (await books()).filter((b) => b.data.sheetLink);
+      const accept = () => o.once('dialog', (d) => d.accept());
+      for (const s of (await t.api(o, 'GET', '/api/items?kind=sheetsync')) as any[]) await t.api(o, 'DELETE', `/api/items/${s.id}`);
+      const before = await books();
+      const otherKinds = async () => { const out: string[] = []; for (const k of ['entry', 'note', 'bookmark', 'music']) out.push(JSON.stringify(await t.api(o, 'GET', `/api/items?kind=${k}`))); return out.join(); };
+      const others0 = await otherKinds();
+
+      // Connect (Google's consent screen is the fake's instant redirect).
+      await o.goto(`${BASE}/atelier/books`);
+      await o.getByRole('status').filter({ hasText: 'Not connected' }).waitFor();
+      await o.getByRole('button', { name: 'Connect Google' }).click();
+      await o.waitForURL(/\/atelier\/books$/);
+      await o.getByText(/Google is connected/).waitFor();
+      await o.getByRole('status').filter({ hasText: 'Connected · not imported yet' }).waitFor();
+      step('connect: Google sign-in round trip with the drive.file permission only');
+
+      // Choose the spreadsheet and the tab; the columns are recognised.
+      await o.getByLabel("Spreadsheet link").fill(`https://docs.google.com/spreadsheets/d/${TRACKER_ID}/edit#gid=1234`);
+      await o.getByRole('button', { name: 'Use this link' }).click();
+      await o.getByLabel('Tab with your books').selectOption({ label: 'Tracker' });
+      await o.getByRole('heading', { name: '2 · Columns' }).waitFor();
+      assert.equal(await o.getByLabel('Ribbonmere field for STATUS').inputValue(), 'shelf');
+      assert.equal(await o.getByLabel('Ribbonmere field for STAR RATING').inputValue(), 'rating');
+      assert.equal(await o.getByLabel('How PROGRESS syncs').inputValue(), 'ignore');
+      assert.equal(await o.getByLabel('How PRICE syncs').inputValue(), 'ignore');
+      assert.equal(await o.getByLabel('How COVER syncs').inputValue(), 'import');
+      assert.equal(await o.locator('.tracker-badge').filter({ hasText: 'formula' }).count(), 3, 'NO., PAGES LEFT and PROGRESS are formulas');
+      await shot(o, 'tracker-columns');
+      step('configure: header found below the banners, columns suggested, formula and price columns stay in the sheet');
+
+      // Preview, then a Ribbonmere backup, then the import. Read-only: nothing is written to the sheet.
+      await o.getByRole('button', { name: 'Preview the import' }).click();
+      await o.getByRole('heading', { name: '3 · Preview of the first import' }).waitFor();
+      await o.locator('.tracker-summary').getByText(/6\s*new books/).waitFor();
+      assert.equal((await books()).length, before.length, 'preview changes nothing');
+      assert.ok(await o.getByRole('button', { name: 'Import 6 books' }).isDisabled(), 'import waits for a backup');
+      const dl = o.waitForEvent('download');
+      await o.getByRole('button', { name: 'Download a Ribbonmere backup first' }).click();
+      assert.match((await dl).suggestedFilename(), /before-book-tracker/);
+      await o.getByRole('button', { name: 'Import 6 books' }).click();
+      await o.getByText(/Imported ♡/).waitFor({ timeout: 30_000 });
+      await shot(o, 'tracker-imported');
+      let ls: any[] = [];
+      await until(async () => (ls = await linked()).length === 6, 'six books imported and linked');
+      const glass = ls.find((b) => b.data.title === 'The Glass Orchard');
+      assert.equal(glass.roomId, 'library');
+      assert.equal(glass.visibility, 'private');
+      assert.equal(glass.data.shelf, 'Read');
+      assert.equal(glass.data.rating, 5);
+      assert.equal(glass.data.spice, 2);
+      assert.equal(glass.data.finishedOn, '2025-10-24');
+      assert.equal(glass.data.format, 'E-book');
+      assert.equal(glass.data.seriesNumber, 2);
+      assert.equal(glass.data.seriesTotal, 6);
+      assert.equal(glass.data.price, undefined);
+      assert.equal(g.writes.length, 0, 'read-only import wrote nothing to the sheet');
+      await o.goto(`${BASE}/room/library`);
+      await o.getByText('The Glass Orchard').first().waitFor();
+      await v.goto(`${BASE}/room/library`);
+      await v.locator('main').first().waitFor(); await v.waitForTimeout(800);
+      assert.equal(await v.getByText('The Glass Orchard').count(), 0, 'imported books are private by default');
+      step('use: preview first, Ribbonmere backup required, 6 books imported as ordinary private Library books; nothing written to the sheet');
+
+      // A change in the sheet comes in; a Ribbonmere edit stays put in read-only.
+      tab().rows[3][19] = { v: 'Even lovelier on a reread.' };
+      await t.api(o, 'PATCH', `/api/items/${ls.find((b) => b.data.title === 'A Study in Quiet').id}`, { data: { rating: 5 } });
+      await o.goto(`${BASE}/atelier/books`);
+      await o.getByRole('button', { name: 'Sync now' }).first().click();
+      await o.getByText(/Synced:/).first().waitFor({ timeout: 30_000 });
+      await until(async () => (await linked()).find((b) => b.data.title === 'The Glass Orchard')?.data.review === 'Even lovelier on a reread.', 'sheet edit imported');
+      assert.equal(g.writes.length, 0, 'read-only sync never writes');
+      // Both sides changed: a question, never an overwrite.
+      tab().rows[4][19] = { v: 'Sheet thoughts.' };
+      const lanterns = (await linked()).find((b) => b.data.title === 'Lanterns at Low Tide');
+      await t.api(o, 'PATCH', `/api/items/${lanterns.id}`, { data: { review: 'Ribbonmere thoughts.' } });
+      await o.reload();
+      await o.getByRole('button', { name: 'Sync now' }).first().click();
+      await o.getByRole('region', { name: 'Questions for you' }).waitFor({ timeout: 30_000 });
+      await o.getByText('Sheet thoughts.').waitFor();
+      await shot(o, 'tracker-conflict');
+      {
+        // The panel with real content in it: named controls and contrast in every appearance, and phone width.
+        const audit = (await import('node:fs')).readFileSync('scripts/a11y-audit.js', 'utf8');
+        const problems: string[] = [];
+        for (const a of ['coquette', 'quiet', 'midnight', 'pixie']) {
+          await o.evaluate((x) => localStorage.setItem('rm-appearance', x), a);
+          await o.reload();
+          await o.getByRole('region', { name: 'Questions for you' }).waitFor();
+          for (const f of (await o.evaluate(audit)) as string[]) problems.push(`[${a}] ${f}`);
+        }
+        await o.evaluate(() => localStorage.removeItem('rm-appearance'));
+        assert.deepEqual(problems, [], 'the Book Tracker panel passes the accessibility audit');
+        // Phone width, in the owner's own window (the cloud sign-in lives in IndexedDB, which a new context lacks).
+        await o.setViewportSize({ width: 390, height: 844 });
+        await o.reload();
+        await o.getByRole('region', { name: 'Questions for you' }).waitFor();
+        await o.waitForTimeout(400);
+        const [sw, iw] = await o.evaluate(() => [document.documentElement.scrollWidth, window.innerWidth]);
+        await shot(o, 'tracker-phone');
+        await o.setViewportSize({ width: 1440, height: 960 });
+        assert.ok(sw <= iw + 1, `the panel fits a phone (${sw} > ${iw})`);
+        await o.reload();
+      }
+      assert.equal((await t.api(o, 'GET', `/api/items/${lanterns.id}`)).data.review, 'Ribbonmere thoughts.', 'nothing overwritten while asking');
+      await o.getByRole('button', { name: "Use the sheet's" }).click();
+      await until(async () => (await t.api(o, 'GET', `/api/items/${lanterns.id}`)).data.review === 'Sheet thoughts.', 'conflict resolved with the sheet value');
+      step('sync: sheet edits flow in; edited in both places becomes a question; answering it applies the choice');
+
+      // Two-way: unlocked after a clean sync, and only with a Drive backup copy.
+      await o.reload();
+      const twoWay = o.getByRole('radio', { name: /Two-way/ });
+      assert.ok(await twoWay.isDisabled(), 'two-way needs a Drive backup first');
+      await o.getByRole('button', { name: 'Make a backup copy in Google Drive' }).click();
+      await o.getByText(/Backup copy made/).waitFor({ timeout: 20_000 });
+      assert.equal(g.copies.length, 1);
+      await twoWay.click();
+      await o.getByText(/Two-way sync is on/).waitFor();
+      const paper = (await linked()).find((b) => b.data.title === 'Paper Swans');
+      await t.api(o, 'PATCH', `/api/items/${paper.id}`, { data: { rating: 5, review: 'Wrote this in Ribbonmere.' } });
+      await o.getByRole('button', { name: 'Sync now' }).first().click();
+      await o.getByText(/written to the sheet/).first().waitFor({ timeout: 30_000 });
+      assert.equal(tab().rows[7][16].v, '⭐⭐⭐⭐⭐', 'rating written in the sheet\'s own style');
+      assert.equal(tab().rows[7][19].v, 'Wrote this in Ribbonmere.');
+      assert.equal(tab().rows[7][0].f, '=ROW()-3', 'formula cells untouched');
+      assert.equal(tab().rows[7][18].f, '=IFERROR(J11/K11,"")'.replace('J11', 'J8').replace('K11', 'K8'), 'progress formula untouched');
+      // The read-only edit to "A Study in Quiet" (row 7) was held in Ribbonmere and now goes out too.
+      assert.deepEqual(g.writes.map((w: any) => w.range).sort(), ["'Tracker'!Q7", "'Tracker'!Q8", "'Tracker'!T8"], 'only the edited cells were written');
+      assert.equal(tab().rows[6][16].v, '⭐⭐⭐⭐⭐');
+      step('two-way: needs a clean sync and a Drive backup copy; then only the edited cells are written, formulas untouched');
+
+      // A row disappears (deleted or filtered): the book stays and is only flagged.
+      const removed = tab().rows.splice(8, 1)[0];
+      await o.reload();
+      await o.getByRole('button', { name: 'Sync now' }).first().click();
+      await o.getByText('Not found in the sheet', { exact: true }).waitFor({ timeout: 30_000 });
+      assert.equal((await linked()).length, 6, 'a missing row never deletes a book');
+      tab().rows.splice(8, 0, removed);
+      step('missing row: the book is kept and flagged, never deleted');
+
+      // Hide / rest / wake: syncing stops while resting, nothing is deleted.
+      await setMode('Book Tracker (Google Sheets)', 'Hidden');
+      await o.goto(`${BASE}/atelier/books`);
+      assert.equal(await o.locator('.atelier-tabs').getByRole('link', { name: 'Book Tracker' }).count(), 0, 'hidden: out of the Atelier tabs');
+      await o.getByRole('heading', { name: 'Book Tracker Connection' }).waitFor();
+      await setMode('Book Tracker (Google Sheets)', 'Resting');
+      await o.goto(`${BASE}/atelier/books`);
+      await o.getByText('Book Tracker (Google Sheets) is resting').waitFor();
+      assert.equal((await linked()).length, 6, 'resting deletes nothing');
+      await setMode('Book Tracker (Google Sheets)', 'On');
+      await o.goto(`${BASE}/atelier/books`);
+      await o.locator('.atelier-tabs').getByRole('link', { name: 'Book Tracker' }).waitFor();
+      step('hide → rest → wake: out of the tabs, resting page, back again; books untouched');
+
+      // Disconnect: books stay, the sheet is not changed, Google access is revoked.
+      const sheetBefore = JSON.stringify(tab().rows);
+      const writesBefore = g.writes.length;
+      accept();
+      await o.getByRole('button', { name: 'Disconnect Google' }).click();
+      await o.getByText(/Disconnected/).waitFor();
+      await o.getByRole('status').filter({ hasText: 'Not connected' }).waitFor();
+      assert.equal(g.revoked.size, 1, 'Google access revoked');
+      assert.equal((await linked()).length, 6, 'disconnecting keeps every book');
+      assert.equal(JSON.stringify(tab().rows), sheetBefore, 'disconnecting does not touch the sheet');
+      assert.equal(g.writes.length, writesBefore);
+      // Re-connect picks up where it left off (the same column choices).
+      await o.getByRole('button', { name: 'Connect Google' }).click();
+      await o.waitForURL(/\/atelier\/books$/);
+      await o.getByText(/Google is connected/).waitFor();
+      await o.getByLabel("Spreadsheet link").fill(TRACKER_ID);
+      await o.getByRole('button', { name: 'Use this link' }).click();
+      await o.getByRole('status').filter({ hasText: 'Read-only' }).waitFor();
+      await o.getByRole('button', { name: 'Sync now' }).first().click();
+      await o.getByText(/Synced:/).first().waitFor({ timeout: 30_000 });
+      assert.equal((await linked()).length, 6, 're-connecting does not duplicate books');
+      step('disconnect: access revoked, books and sheet untouched; re-connect resumes read-only without duplicates');
+
+      // Reset: forgets the connection settings and links, keeps every book; other data untouched.
+      await resetFeature('Book Tracker (Google Sheets)');
+      await until(async () => (await linked()).length === 0, 'links forgotten');
+      assert.equal((await books()).length, before.length + 6, 'every book kept after reset');
+      assert.equal(((await t.api(o, 'GET', '/api/items?kind=sheetsync')) as any[]).length, 0);
+      assert.equal(await otherKinds(), others0, 'unrelated data untouched');
+      assert.equal(JSON.stringify(tab().rows), sheetBefore, 'the sheet itself is never reset');
+      await o.goto(`${BASE}/atelier/books`);
+      await o.getByRole('button', { name: 'Disconnect Google' }).waitFor();
+      accept();
+      await o.getByRole('button', { name: 'Disconnect Google' }).click();
+      await o.getByRole('status').filter({ hasText: 'Not connected' }).waitFor();
+      step('reset: settings, history and row links forgotten; every book and the sheet kept');
     },
   };
 }

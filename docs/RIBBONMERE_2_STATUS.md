@@ -97,6 +97,58 @@ Work happens on branch `claude/ribbonmere-2`. Your live site keeps running from 
   - It then resets each of the 19 resettable features in turn and checks that only what that feature's own description promises disappears. All rooms, the map, the theme and every other item stay byte-for-byte the same.
   - This runs on both the home-server and the cloud version.
 
+
+### Book Tracker: Google Sheets sync
+*Atelier → Book Tracker* connects the Library with the owner's Google Sheets tracker. The Owner's Guide (section 30) has setup and everyday use.
+
+- **Your sheet was inspected first, read-only, and never modified from here.** "My book tracker <3" has these tabs:
+  - Dashboard, data 2, Data, Series Tracker, ⭐️ Books review & Gallery;
+  - Tracker (89 books: 88 Finished, 1 Started);
+  - Wishlist and TBR (both empty).
+
+  The Tracker's header row sits below the *TODAY IS* line and the *BOOK DETAILS / YOUR REVIEW* banners. Its columns are NO., BOOK TITLE, COVER, AUTHOR … NOTES. Notable formats:
+  - formats are `Kindle 💻`, `Book 📚` and `Audiobook 🎧`;
+  - ratings and spice are ⭐ and 🌶️ repeated;
+  - dates look like `24 Oct 25`, audiobook times like `11:27:00`, and part numbers like `2/6`.
+
+  The engine was built for exactly this layout, and nothing assumes a generic template: the header row is found, every column is shown for review, and formula columns are detected and left alone.
+  - The only access available here was Google Drive's text export, which drops empty cells and hides formulas.
+  - So the exact column positions, which columns are formulas, and whether COVER uses `=IMAGE()` will be read from Google's API when you connect.
+  - You review all of it before anything is imported.
+- **Integrated, not a second library:**
+  - Imported books are ordinary books in your existing Library room, on your existing shelves.
+  - New book fields: spice, favourite, audiobook listened / length, books in series, summary, favourite moment, favourite character, price. They show in the book spread and the book form.
+  - Ribbonmere-only fields (secret message, order, cloth colour, bookshop notes, links) are never synced.
+- **Modes:**
+  - Read-only is the default.
+  - Two-way unlocks only after a clean sync with the current column choices, plus a backup copy of the spreadsheet made in Google Drive. The server also refuses writes unless both are true.
+  - Automatic (at most every 15 minutes while the app is open, owner only) or manual.
+- **Data safety:**
+  - A preview comes before the first import, and a Ribbonmere backup download is required.
+  - Books are identified by title and author, ignoring case, accents and punctuation. The link follows sorting, and renames on the same row.
+  - Existing Library books are linked rather than duplicated. Duplicate rows (re-reads) are reported and can be skipped.
+  - Per-field three-way merge, so a book edited in both places becomes a question.
+  - Emptying a value is never automatic, in either direction.
+  - Missing rows are flagged, never deleted.
+  - Safety stops when the header or columns move, or the sheet shrinks by more than 30%.
+  - The sheet is only ever written cell by cell. Each write needs:
+    - the row's title still matching;
+    - the cell still holding what the plan saw;
+    - the cell not being a formula.
+
+    Text is written RAW (so `=…` can never become a formula). Parsed input is allowed only for plain dates and times. There is no route that deletes rows, clears ranges or rewrites a sheet.
+- **Security:**
+  - Google's OAuth flow with the single non-sensitive `drive.file` scope, so Ribbonmere can open only the file you pick (and the backup copies it makes). The Google Picker runs in its own popup with a strict, nonce-based policy.
+  - The client secret and refresh token never reach the browser. The token is sealed with AES-GCM in Workers KV (`g:connection`, which the image route can't serve) or in the home server's database (never part of a backup).
+  - The OAuth return needs a signed, 10-minute state that matches an HttpOnly cookie set for the owner's browser.
+  - Every other route is owner-only.
+  - A book's link to its row (`sheetLink`) is an owner-only field. It goes to `items_private` on the cloud, and the Firestore rules refuse it in a readable document.
+  - The sync state is a new always-private kind, `sheetsync`.
+- **Optional and reversible:**
+  - Feature Manager entry *Book Tracker (Google Sheets)* (Integrations): hidden takes it out of the Atelier tabs, resting stops all syncing.
+  - Reset forgets settings, history and row links; every book and the sheet stay.
+  - Disconnect revokes Google access and keeps every book. Reconnecting resumes without duplicates.
+
 ## How it was tested
 
 All cloud testing uses the official **Firebase emulators** with the real security rules, under the emulator-only project id `demo-ribbonmere`. A `demo-` project cannot reach a real Firebase database, so **your production Firebase was never used**. Cloudflare Pages Functions and KV run in **wrangler**, Cloudflare's local runtime. The test hook the cloud tests use (`window.__rmApi`) exists only in builds made with `VITE_USE_EMULATORS=1`. Real Cloudflare builds never set that, so the hook is never present.
@@ -104,13 +156,29 @@ All cloud testing uses the official **Firebase emulators** with the real securit
 | Command | What it covers | Result (final code) |
 |---|---|---|
 | `npm run typecheck` / `npm run build` | TypeScript for client and server; production build | ✅ clean |
-| `npm test` | 12 home-server API tests (auth, privacy, feeds, uploads, guestbook, backups) + 2 nested-list tests | ✅ 14 / 14 |
-| `npm run test:rules` | Firestore security rules on the emulator: outsiders, other accounts, guests, owner, new kinds, shared letters | ✅ 8 / 8 groups |
-| `npm run test:functions` | Pages Functions in wrangler + real RS256 token checks | ✅ 6 / 6 |
+| `npm test` | 12 home-server API tests (auth, privacy, feeds, uploads, guestbook, backups), 2 nested-list tests, **14 Book Tracker engine tests** and **11 Google-connection tests against a local fake Google** | ✅ 39 / 39 |
+| `npm run test:rules` | Firestore security rules on the emulator: outsiders, other accounts, guests, owner, new kinds (incl. `sheetsync`), `sheetLink` refused in readable items, shared letters | ✅ 8 / 8 groups |
+| `npm run test:functions` | Pages Functions in wrangler + real RS256 token checks, plus the Book Tracker function (OAuth state + cookie, sealed token in KV, guarded writes, disconnect) | ✅ 7 / 7 |
 | `npm run screenshots` | the original 17 end-to-end browser checks (home server) | ✅ 17 / 17 |
-| `npm run test:v2` | **every 2.0 feature's full lifecycle**, isolation, accessibility and phone checks (home server) | ✅ 63 / 63, no browser errors |
+| `npm run test:v2` | **every 2.0 feature's full lifecycle**, isolation, accessibility and phone checks, and the **Book Tracker lifecycle** (home server) | ✅ 73 / 73, no browser errors |
 | `npm run test:cloud` | cloud end-to-end: sign-in, live sync between two devices, offline edits, private images, RSS through the function, guestbook moderation and rate limit, search, backups and safety-backup restore, SQLite migration, checkpoints, password change, phone layout, reduced motion, plus 5 checks of 2.0 data privacy | ✅ 29 / 29 |
-| `npm run test:v2:cloud` | **the same 2.0 lifecycle, isolation, accessibility and phone sections, unchanged, against the cloud version** | ✅ 63 / 63 in one clean run, no browser errors |
+| `npm run test:v2:cloud` | **the same 2.0 sections, unchanged, against the cloud version**, including the Book Tracker | ✅ 73 / 73, no browser errors |
+
+**The Book Tracker section** (both versions) runs against a local fake Google modelled on your Tracker tab. It covers:
+- **connect:** the drive.file scope only;
+- **configure:** the header found below the banners, and formula and price columns left in the sheet;
+- **preview → backup → import:** 6 private books; nothing written to the sheet;
+- **sheet edits:** they come in;
+- **a conflict:** asked, never overwritten;
+- **two-way:** locked until a clean sync and a Drive backup copy; then only the edited cells are written, and formulas stay untouched;
+- **a missing row:** flagged, never deleted;
+- **hide → rest → wake;**
+- **disconnect:** access revoked, books and sheet untouched; reconnecting adds no duplicates;
+- **reset:** links forgotten, every book kept.
+
+It also runs the accessibility audit on the filled panel in all four appearances, and checks phone width.
+
+**`test:cloud`, one honest note:** in this session's first full run, and in its one re-run, a check failed: the commonplace entry wasn't found in Firestore. The cause was the test harness, not the app. It read only the first page of Firestore's document list, and a randomly named new document could fall onto a later page. The harness now reads every page, and the suite passed 29 / 29.
 
 **`test:v2` and `test:v2:cloud` drive each feature through the same steps:** use → configure (where it has settings) → hide → open by its address → rest → show its resting page and disappear for visitors → wake → data intact → reset → only its own data gone. Covered:
 - the Letterbox and stamps;
@@ -123,7 +191,7 @@ All cloud testing uses the official **Firebase emulators** with the real securit
 - the Games Parlour and Charms;
 - weather, light and interactions.
 
-The full home run (`test:v2`) finished just before two final colour fixes (the Paths clouds, and Stargirl's buttons in Midnight). The sections those fixes touch, *polish* and *paths*, were re-run on the home version afterwards and pass. The cloud run above is of the final code.
+All the results above are from full runs of the final code.
 
 Screenshots are in `docs/screenshots/v2/` (home) and `docs/screenshots/v2-cloud/` (cloud).
 
@@ -137,6 +205,22 @@ Screenshots are in `docs/screenshots/v2/` (home) and `docs/screenshots/v2-cloud/
 - **A one-off live-sync timeout:** once, earlier this session, the cloud test of a book added on one device appearing on a second device within 15 seconds timed out. It passed on the immediate rerun and in every run since (all of the Phase 7 runs). It looks like emulator load, but it's recorded here rather than hidden.
 - **Real feeds and YouTube:** the sandbox can't reach the internet. The Newspaper and Parlour were tested with feeds placed directly in the test database, and the reader's fetching was tested against local fixtures. YouTube embeds were checked by address only. Check a few of your real subscriptions after deploying.
 - **Real Firebase and Cloudflare accounts:** these can't be tested from here. The emulators run the same rules and functions code, but your own project's settings (the owner ID in the rules, KV binding and environment variables) are checked by the setup checklist at `/setup` once deployed.
+- **Book Tracker — what can't be tested from here:** this sandbox can't reach Google. Everything was tested against a local fake that behaves like Google's APIs in the ways that matter. Still untested against the real thing:
+  - Google's consent screen;
+  - the Google Picker popup;
+  - Sheets' real handling of dates and times typed in (USER_ENTERED);
+  - how real `=IMAGE()` and in-cell pictures come back;
+  - refresh tokens expiring in Testing mode.
+
+  **Recommended first run with your real tracker:**
+  1. Connect.
+  2. Check the column table.
+  3. Preview, import read-only, and compare a few books.
+  4. Only then, if you want it, make the Drive copy and try two-way on one book.
+- **Book Tracker, by design:**
+  - Only one tab syncs (Tracker; Wishlist and TBR are untouched).
+  - Automatic sync runs only while you have Ribbonmere open; there is no server timer, which keeps it free.
+  - Turning two-way on carries over edits you made in Ribbonmere while it was read-only (preview shows them first).
 - **By design:** the follower companion is owner-only, and the day & night light follows each visitor's clock.
 
 ## Commands to run elsewhere

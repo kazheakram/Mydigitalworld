@@ -15,6 +15,7 @@ import { RoomPage } from './rooms/RoomPage';
 import { LoginPage, NotFound, SearchPage, SharePage } from './pages';
 import { SetupPage } from './SetupPage';
 import { IS_FIREBASE } from './lib/backend/config';
+import { TrackerAutoSync } from './lib/trackerAuto';
 
 // Private areas load separately, so visitors never download the editor or dashboard code.
 const DollhousePage = lazy(() => import('./private/Dollhouse').then((m) => ({ default: m.DollhousePage })));
@@ -47,6 +48,7 @@ const LetterViewPage = lazy(() => import('./private/Letters').then((m) => ({ def
 const CapsulesPage = lazy(() => import('./private/Capsules').then((m) => ({ default: m.CapsulesPage })));
 const RabbitMapPage = lazy(() => import('./private/RabbitMap').then((m) => ({ default: m.RabbitMapPage })));
 const CharmsPage = lazy(() => import('./private/Charms').then((m) => ({ default: m.CharmsPage })));
+const BookTrackerPage = lazy(() => import('./atelier/BookTracker').then((m) => ({ default: m.BookTrackerPage })));
 const BackupsPage = lazy(() => import('./atelier/Studio').then((m) => ({ default: m.BackupsPage })));
 
 /** The following companion only loads for the owner when the Pets feature is on. */
@@ -106,6 +108,7 @@ function Shell() {
       <PixieSprites />
       <PixelateFilter />
       <OwnerCompanion />
+      <TrackerAutoSync />
       <Suspense fallback={<Loading />}>
         <FeatureGate>
         <Routes>
@@ -148,6 +151,7 @@ function Shell() {
           <Route path="/atelier/village" element={<VillageSettingsPage />} />
           <Route path="/atelier/backup" element={<BackupsPage />} />
           <Route path="/atelier/features" element={<FeatureManagerPage />} />
+          <Route path="/atelier/books" element={<BookTrackerPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         </FeatureGate>

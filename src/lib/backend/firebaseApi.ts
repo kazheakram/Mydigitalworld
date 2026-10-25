@@ -805,6 +805,13 @@ export async function firebaseApi(method: string, url: string, body?: any, heade
     try { return await unfurl(String(body?.url ?? ''), fetcher); } catch (e: any) { return fail(422, String(e.message ?? e)); }
   }
   if (is('POST', /^\/api\/media$/)) return uploadMedia(body as Blob, new Headers(headers));
+  // Book Tracker: the Google connection lives in a Cloudflare function (the token never reaches the browser).
+  if (p.startsWith('/api/google/')) {
+    await owner();
+    try {
+      return await cloudJson(p + u.search, { method, headers: body === undefined ? {} : { 'content-type': 'application/json' }, body: body === undefined ? undefined : JSON.stringify(body) });
+    } catch (e: any) { return fail(e.status ?? 502, String(e.message ?? e)); }
+  }
 
   return fail(404, `This version of Ribbonmere doesn't support ${method} ${p}.`);
 }

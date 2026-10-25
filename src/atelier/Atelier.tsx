@@ -6,6 +6,7 @@ import { Link, NavLink, useParams } from 'react-router-dom';
 import type { SceneObject, WorldConfig } from '../../shared/types';
 import { DEFAULT_WORLD } from '../../shared/defaultWorld';
 import { useStore } from '../lib/store';
+import { useFeatureNav } from '../lib/features';
 import { api } from '../lib/api';
 import { clone } from '../lib/util';
 import { TopNav } from '../ui/Nav';
@@ -27,6 +28,8 @@ const TABS = [
 
 export function AtelierShell({ children }: { children: ReactNode }) {
   const { owner, ready, saveState, saveError } = useStore();
+  const extra = useFeatureNav('atelier');
+  const tabs = [...TABS.slice(0, -1), ...extra.map((n) => ({ to: n.to, label: n.label, end: false })), TABS[TABS.length - 1]];
   if (ready && !owner) {
     return (
       <div className="page"><header className="page-header"><TopNav /></header>
@@ -37,7 +40,7 @@ export function AtelierShell({ children }: { children: ReactNode }) {
     <div className="page atelier">
       <header className="atelier-header">
         <div className="atelier-title"><BowIcon size={36} /><div><h1 className="script">The Atelier</h1><p className="smallcaps">your private design studio</p></div></div>
-        <nav className="atelier-tabs" aria-label="Atelier sections">{TABS.map((t) => <NavLink key={t.to} to={t.to} end={t.end}>{t.label}</NavLink>)}</nav>
+        <nav className="atelier-tabs" aria-label="Atelier sections">{tabs.map((t) => <NavLink key={t.to} to={t.to} end={t.end}>{t.label}</NavLink>)}</nav>
         <span className={`save-state ${saveState}`} role="status" aria-live="polite">
           {saveState === 'saving' ? 'saving…' : saveState === 'saved' ? 'draft saved ✓' : saveState === 'error' ? `not saved: ${saveError}` : ''}
         </span>

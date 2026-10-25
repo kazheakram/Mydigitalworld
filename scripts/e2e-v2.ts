@@ -6,6 +6,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import assert from 'node:assert/strict';
+import { startFakeGoogle, fakeGoogleEnv } from '../server/tests/fixtures/fakeGoogle';
 
 const PORT = 8911;
 const BASE = `http://localhost:${PORT}`;
@@ -16,8 +17,9 @@ const only = process.argv.slice(2);
 const want = (s: string) => !only.length || only.includes(s);
 fs.mkdirSync(OUT, { recursive: true });
 
+const google = await startFakeGoogle(); // a local stand-in for Google, shaped like the owner's tracker
 const server = spawn(process.execPath, ['--import', 'tsx', 'server/index.ts'], {
-  env: { ...process.env, NODE_ENV: 'production', PORT: String(PORT), DATA_DIR: dataDir, OWNER_PASSWORD: PASSWORD, NODE_NO_WARNINGS: '1' }, stdio: ['ignore', 'pipe', 'pipe'],
+  env: { ...process.env, ...fakeGoogleEnv(google.url), NODE_ENV: 'production', PORT: String(PORT), DATA_DIR: dataDir, OWNER_PASSWORD: PASSWORD, NODE_NO_WARNINGS: '1' }, stdio: ['ignore', 'pipe', 'pipe'],
 });
 server.stderr.on('data', (d) => process.stderr.write(`[server] ${d}`));
 await new Promise<void>((res, rej) => { const t = setTimeout(() => rej(new Error('server did not start')), 15000); server.stdout.on('data', (d) => { if (String(d).includes('awake')) { clearTimeout(t); res(); } }); });
@@ -78,7 +80,7 @@ try {
   { const d = new Date(); d.setHours(11, 0, 0, 0); await visitorCtx.clock.setFixedTime(d); } // steady daylight for screenshots
   const v = await visitorCtx.newPage(); watch(v, 'visitor');
 
-  const sections: Record<string, () => Promise<void>> = (await import('./e2e-v2-sections')).sections({ o, v, BASE, browser, shot, enter, api, step, ownerCtx, visitorCtx, seedFeeds } as any);
+  const sections: Record<string, () => Promise<void>> = (await import('./e2e-v2-sections')).sections({ o, v, BASE, browser, shot, enter, api, step, ownerCtx, visitorCtx, seedFeeds, google } as any);
   for (const [name, fn] of Object.entries(sections)) if (want(name)) { console.log(`— ${name}`); await fn(); }
 
   if (errors.length) { console.log('\nBrowser errors:\n' + errors.join('\n')); process.exitCode = 1; }
@@ -91,5 +93,6 @@ try {
 } finally {
   await browser.close();
   server.kill();
+  await google.close();
   fs.rmSync(dataDir, { recursive: true, force: true });
 }

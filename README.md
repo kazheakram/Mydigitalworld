@@ -27,6 +27,7 @@ Everything in 2.0 is optional and reversible from one place, **Atelier → Featu
 | **Creative spaces** | Picture House. Record Shop. Bookshop. Memory Museum. Scrapbook Studio with picture downloads. Writing Desk with wax seals and optional share-by-link. |
 | **Gentle play** | Achievements, pretend pearls, a Charm Shop where everything is also free elsewhere, and five untimed games in a Games Parlour. |
 | **Appearance** | Coquette, Quiet (calm and readable; Alt + Q), Pixie (pixel art) and Midnight. |
+| **Integrations** | An optional *Book Tracker* that keeps the Library and your Google Sheets reading tracker in step: read-only by default, two-way on request, cell-by-cell and never deleting anything (Owner's Guide §30). |
 
 What's built, how it was tested and what's left is recorded in **[docs/RIBBONMERE_2_STATUS.md](docs/RIBBONMERE_2_STATUS.md)**.
 
@@ -75,7 +76,7 @@ Everything you create is stored in the `data/` folder: a single SQLite database 
 - **React + TypeScript + Vite** for the client. The village, editor and dashboard are highly interactive, and TypeScript keeps the world/theme data formats consistent between client and server (`shared/types.ts`).
 - **Node + Express** for a small server. It does the things a browser can't do safely: access control for private content, fetching RSS feeds and link previews (browsers block cross-site requests), handling uploads, and backups.
 - **SQLite via Node's built-in `node:sqlite`.** That's one file, with nothing to install or host separately and no native compilation. It's easy to back up and easy to move.
-- **No cloud services required.** No accounts with third parties, no API keys, and no lock-in. Fonts ship with the site.
+- **No cloud services required.** No accounts with third parties, no API keys, and no lock-in. Fonts ship with the site. (The optional Google Sheets book tracker needs your own free Google Cloud client; everything else works without it.)
 
 ## How it's built
 
