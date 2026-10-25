@@ -78,11 +78,17 @@ Work happens on branch `claude/ribbonmere-2`. Your live site keeps running from 
   - A visitor-facing postcards page with a cloudy teaser that leaks nothing.
   - The *Every Path* achievement.
 
+### Phase 6: gentle gamification
+- **Charms page:** every achievement (earned or how to find it), your pearl purse, the Charm Shop (each charm says where it is free anyway), the charm bracelet, kept bouquets.
+- **Games Parlour room template:** memory cards, hidden objects, post sorting, the flower table (keepsake bouquets) and a sliding picture puzzle. All untimed, and none of them gate anything.
+- The Discoverer achievement is now awarded when you pocket a discovery (it was defined but never given).
+- Visitors' progress stays on their device; the owner's is a private item.
+
 **How it was tested:**
 
 | Command | Result |
 |---|---|
-| `npm run test:v2` | 53 browser checks, all passing, no browser errors |
+| `npm run test:v2` | 59 browser checks, all passing, no browser errors |
 | `npm test` | 12 server tests |
 | `npm run test:rules` | 8 rule groups, including the new kinds test and the shared-letter test |
 | `npm run test:functions` | 6 |
@@ -101,6 +107,11 @@ The `test:v2` run covers these lifecycles:
   - Sealed contents stay hidden; open early and reseal work; capsules are always private.
   - Dragged positions and threads are saved and survive a reload; search, zoom and filters work; the map reset leaves discoveries alone.
   - Unrevealed paths are never sent to visitors, revealed ones open for them, and hidden/resting work as described.
+- **Games / Charms:**
+  - A visitor plays all five games through to the end; the puzzle is solved by search, not by reading the app's state.
+  - Achievements and pearls land in the visitor's own storage, and every room opens without playing.
+  - The owner earns pearls and buys a charm; a gentle note appears when there aren't enough.
+  - Achievements, pearls and games each rest and reset without touching the others.
 - **World:** weather and light reach visitors after publish, interactions work, Quiet and resting turn them off without touching buildings, and resetting weather leaves the light setting alone.
 
 Screenshots are in `docs/screenshots/v2/`.
@@ -109,12 +120,12 @@ Screenshots are in `docs/screenshots/v2/`.
 
 | Phase | Features |
 |---|---|
-| 6 | Charms page (achievements, pearls, keepsake charms), five minigames |
 | 7 | Final appearance polish, and full lifecycle tests for every feature on the cloud backend |
 
 These features already appear in the Feature Manager with a **coming soon** label, so you can set them up ahead of time. Their menu links and Dollhouse cards stay hidden until they're built, so nothing in the site leads to a missing page.
 
 ## Known limitations
+- **One-off cloud sync timing failure:** in one of eight cloud runs this session, the cloud test's live-sync check (a book added on device A appearing on device B within 15 seconds on the local emulator) timed out once. It passed on the immediate rerun and in every other run. This is noted here rather than hidden; if it recurs, it is the first thing to look at in Phase 7.
 - The sandbox can't fetch real feeds, so the Newspaper and Parlour were tested with feeds placed directly in the test database. Fetching itself is the reader's existing, already-tested code path. YouTube thumbnails and embeds load from YouTube, which the sandbox can't reach, so they couldn't be seen playing here. Only the embed address was checked.
 - The follower companion is owner-only by design. Visitors only see companions you put on the map.
 - The day & night light uses each visitor's own clock, so different visitors may see different times of day. Choose "Always daytime" in the Feature Manager if you prefer one look.

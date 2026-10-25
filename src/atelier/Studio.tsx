@@ -165,6 +165,7 @@ const TEMPLATE_INFO: { id: RoomTemplate; name: string; about: string; art: strin
   { id: 'recordstore', name: 'Record shop', about: 'Albums and artists in crates, with reviews and players', art: 'shopfront' },
   { id: 'bookstore', name: 'Bookshop', about: 'Themed displays of recommendations and a wishlist (separate from your library)', art: 'shopfront' },
   { id: 'museum', name: 'Memory museum', about: 'Exhibitions and a timeline of your memories (private to start)', art: 'museum' },
+  { id: 'games', name: 'Games parlour', about: 'Memory cards, hidden objects, letter sorting, a flower table and a picture puzzle', art: 'pavilion' },
   { id: 'commonplace', name: 'Commonplace book', about: 'Quotations, excerpts and reflections with their sources', art: 'townhouse' },
 ];
 

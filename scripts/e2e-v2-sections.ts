@@ -742,6 +742,143 @@ export function sections(t: T): Record<string, () => Promise<void>> {
       await v.locator('.region-stage .scene').waitFor();
       step('hidden takes Paths out of the menu; resting hides every path from visitors; on brings them back');
     },
+    games: async () => {
+      await o.goto(`${BASE}/atelier/rooms`);
+      await o.locator('.template-card', { hasText: 'Games parlour' }).click();
+      await o.getByLabel('Room name').fill('Games Parlour');
+      await o.getByRole('button', { name: 'Build it' }).click();
+      await o.locator('.room-rows li', { hasText: 'Games Parlour' }).getByRole('radio', { name: /public/i }).click();
+      await o.waitForTimeout(500);
+      await publish();
+      await v.goto(`${BASE}/room/games-parlour`);
+      await v.evaluate(() => { localStorage.removeItem('rm-achievements'); localStorage.removeItem('rm-pearls'); localStorage.removeItem('rm-games'); });
+      await v.reload();
+      await shot(v, 'games');
+      // Memory: learn the cards two at a time, then match them up.
+      await v.getByRole('button', { name: /memory cards/i }).click();
+      const seen = new Map<number, string>();
+      const card = (i: number) => v.locator('.memory-card').nth(i);
+      for (let i = 0; i < 16; i += 2) {
+        await card(i).click(); await card(i + 1).click();
+        seen.set(i, (await card(i).getAttribute('aria-label'))!); seen.set(i + 1, (await card(i + 1).getAttribute('aria-label'))!);
+        await v.waitForTimeout(1000);
+      }
+      const byArt = new Map<string, number[]>();
+      for (const [i, a] of seen) byArt.set(a, [...(byArt.get(a) ?? []), i]);
+      for (const [, [a, b]] of byArt) {
+        if (await card(a).getAttribute('aria-pressed') === 'true' && (await card(a).getAttribute('class'))!.includes('matched')) continue;
+        await card(a).click(); await card(b).click(); await v.waitForTimeout(250);
+      }
+      await v.getByText(/All pairs found in \d+ turns/).waitFor();
+      await v.getByRole('button', { name: '← All games' }).click();
+      // Hidden objects.
+      await v.getByRole('button', { name: /hidden in the garden/i }).click();
+      for (const thing of ['teacup', 'letter', 'heart', 'star', 'butterfly']) await v.getByRole('button', { name: `tap the ${thing}`, exact: true }).click({ force: true });
+      await v.getByText('Everything found ✿').waitFor();
+      await v.getByRole('button', { name: '← All games' }).click();
+      // Sorting the post.
+      await v.getByRole('button', { name: /sorting the post/i }).click();
+      for (let k = 0; k < 8; k++) {
+        const letter = v.locator('.post-letter').first();
+        const house = (await letter.getAttribute('aria-label'))!.split(', ').pop()!;
+        await letter.click();
+        await v.getByRole('button', { name: `Pigeonhole: ${house}` }).click();
+      }
+      await v.getByText('All the post is sorted ✿').waitFor();
+      await v.getByRole('button', { name: '← All games' }).click();
+      // The flower table.
+      await v.getByRole('button', { name: /the flower table/i }).click();
+      for (const f of ['Rose', 'Peony', 'Daisy', 'Lavender']) await v.getByRole('button', { name: `Add a ${f}` }).click();
+      await v.getByRole('button', { name: 'Glass bottle' }).click();
+      await shot(v, 'flower-table');
+      await v.getByRole('button', { name: 'Keep this bouquet' }).click();
+      await v.getByRole('region', { name: 'Kept bouquets' }).locator('svg').first().waitFor();
+      await v.getByRole('button', { name: '← All games' }).click();
+      // Picture puzzle: read the board and solve it with a breadth-first search.
+      await v.getByRole('button', { name: /picture puzzle/i }).click();
+      const labels = await v.locator('.puzzle-tile').evaluateAll((els) => els.map((e) => e.getAttribute('aria-label')));
+      const start = labels.map((l) => (l === 'gap' ? 8 : Number(l!.split(' ')[1]) - 1));
+      const goal = '0,1,2,3,4,5,6,7,8';
+      const prev = new Map<string, [string, number] | null>([[start.join(), null]]);
+      const queue = [start.join()];
+      while (queue.length) {
+        const cur = queue.shift()!; if (cur === goal) break;
+        const t = cur.split(',').map(Number); const e = t.indexOf(8);
+        for (const d of [-3, 3, -1, 1]) {
+          const j = e + d; if (j < 0 || j > 8 || (Math.abs(d) === 1 && Math.floor(j / 3) !== Math.floor(e / 3))) continue;
+          const n = [...t]; [n[e], n[j]] = [n[j], n[e]]; const key = n.join();
+          if (!prev.has(key)) { prev.set(key, [cur, j]); queue.push(key); }
+        }
+      }
+      const path: number[] = []; let at = goal;
+      while (prev.get(at)) { const [p, j] = prev.get(at)!; path.unshift(j); at = p; }
+      for (const j of path) await v.locator('.puzzle-tile').nth(j).click();
+      await v.getByText(/The lake is whole again/).waitFor();
+      step('a visitor can play all five games — memory, hidden objects, post sorting, flowers, puzzle — untimed');
+      const ach = await v.evaluate(() => JSON.parse(localStorage.getItem('rm-achievements') ?? '{}'));
+      for (const a of ['games-memory', 'games-hidden', 'games-letters', 'games-flowers', 'games-puzzle']) assert.ok(ach[a], `visitor earned ${a}`);
+      const pearls = await v.evaluate(() => JSON.parse(localStorage.getItem('rm-pearls') ?? '{}').pearls);
+      assert.ok(pearls > 0, 'visitor pearls are kept on their own device');
+      step('a visitor’s achievements and pearls live only on their own device');
+      await v.goto(`${BASE}/room/library`);
+      await v.getByRole('heading', { level: 1 }).first().waitFor();
+      step('games never gate anything: every room opens without playing');
+    },
+    charms: async () => {
+      await o.goto(`${BASE}/dollhouse/charms`);
+      await o.getByRole('region', { name: 'Achievements' }).waitFor();
+      const before = Number(await o.locator('.pearl-purse strong').textContent());
+      // Earn a few pearls at the flower table (the owner's progress saves privately).
+      const room = (await t.api(o, 'GET', '/api/config/world')).draft.rooms.find((r: any) => r.template === 'games');
+      await o.goto(`${BASE}/room/${room.id}`);
+      await o.getByRole('button', { name: /the flower table/i }).click();
+      for (const f of ['Rose', 'Tulip', 'Daisy']) await o.getByRole('button', { name: `Add a ${f}` }).click();
+      await o.getByRole('button', { name: 'Keep this bouquet' }).click();
+      await o.waitForTimeout(800);
+      await o.goto(`${BASE}/dollhouse/charms`);
+      await o.getByRole('region', { name: 'Kept bouquets' }).waitFor();
+      const now = Number(await o.locator('.pearl-purse strong').textContent());
+      assert.ok(now > before, `pearls grew (${before} → ${now})`);
+      const prog = await t.api(o, 'GET', '/api/items?kind=progress');
+      assert.equal(prog.length, 1); assert.equal(prog[0].visibility, 'private', 'owner progress is private');
+      await o.getByRole('article', { name: 'Gilded frame' }).getByRole('button', { name: '8 pearls' }).click();
+      await o.getByRole('article', { name: 'Gilded frame' }).getByText('on your bracelet ✓').waitFor();
+      await o.getByRole('region', { name: 'Charm bracelet' }).waitFor();
+      await shot(o, 'charms');
+      step('pearls from playing buy keepsake charms for the bracelet; every charm is also free in the Atelier');
+      const left = Number(await o.locator('.pearl-purse strong').textContent());
+      if (left < 20) {
+        await o.getByRole('article', { name: 'Vintage Valentine theme' }).getByRole('button', { name: '20 pearls' }).click();
+        await o.getByText(/needs 20 pearls/).waitFor();
+        step('not enough pearls: a gentle note, no pressure, nothing locked');
+      }
+      await setMode('Pearls & the Charm Shop', 'Resting');
+      await o.goto(`${BASE}/dollhouse/charms`);
+      await o.getByRole('region', { name: 'Achievements' }).waitFor();
+      assert.equal(await o.locator('.pearl-purse').count(), 0, 'no purse while pearls rest');
+      assert.equal(await o.getByRole('region', { name: 'The Charm Shop' }).count(), 0, 'no shop while pearls rest');
+      await setMode('Pearls & the Charm Shop', 'On');
+      await o.goto(`${BASE}/dollhouse/charms`);
+      assert.equal(Number(await o.locator('.pearl-purse strong').textContent()), left, 'pearls kept while resting');
+      await resetFeature('Achievements');
+      await o.goto(`${BASE}/dollhouse/charms`);
+      assert.equal(await o.locator('.achievement.earned').count(), 0, 'achievements reset');
+      assert.equal(Number(await o.locator('.pearl-purse strong').textContent()), left, 'pearls untouched by the achievements reset');
+      await resetFeature('Pearls & the Charm Shop');
+      await o.goto(`${BASE}/dollhouse/charms`);
+      assert.equal(Number(await o.locator('.pearl-purse strong').textContent()), 0, 'pearls reset');
+      assert.equal(await o.getByRole('region', { name: 'Charm bracelet' }).count(), 0, 'charms reset');
+      await o.getByRole('region', { name: 'Kept bouquets' }).waitFor();
+      await resetFeature('Little games');
+      await o.goto(`${BASE}/dollhouse/charms`);
+      await o.getByRole('region', { name: 'Achievements' }).waitFor();
+      assert.equal(await o.getByRole('region', { name: 'Kept bouquets' }).count(), 0, 'games reset clears bouquets');
+      await setMode('Little games', 'Resting');
+      await o.goto(`${BASE}/room/${room.id}`);
+      await o.getByText('Little games is resting').waitFor();
+      await setMode('Little games', 'On');
+      step('achievements, pearls and games each rest and reset on their own without touching the others');
+    },
     world: async () => {
       await o.goto(`${BASE}/atelier/features`);
       await o.getByRole('article', { name: 'Weather' }).getByRole('combobox').selectOption('snow');

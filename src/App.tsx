@@ -46,6 +46,7 @@ const LettersPage = lazy(() => import('./private/Letters').then((m) => ({ defaul
 const LetterViewPage = lazy(() => import('./private/Letters').then((m) => ({ default: m.LetterViewPage })));
 const CapsulesPage = lazy(() => import('./private/Capsules').then((m) => ({ default: m.CapsulesPage })));
 const RabbitMapPage = lazy(() => import('./private/RabbitMap').then((m) => ({ default: m.RabbitMapPage })));
+const CharmsPage = lazy(() => import('./private/Charms').then((m) => ({ default: m.CharmsPage })));
 const BackupsPage = lazy(() => import('./atelier/Studio').then((m) => ({ default: m.BackupsPage })));
 
 /** The following companion only loads for the owner when the Pets feature is on. */
@@ -138,6 +139,7 @@ function Shell() {
           <Route path="/stargirl/picks" element={<PicksPage />} />
           <Route path="/stargirl/map" element={<RabbitMapPage />} />
           <Route path="/dollhouse/capsules" element={<CapsulesPage />} />
+          <Route path="/dollhouse/charms" element={<CharmsPage />} />
           <Route path="/atelier" element={<WorldEditorPage />} />
           <Route path="/atelier/room/:roomId" element={<RoomEditorPage />} />
           <Route path="/atelier/theme" element={<ThemeClosetPage />} />

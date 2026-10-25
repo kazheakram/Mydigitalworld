@@ -39,7 +39,8 @@ export function roomFeatureMode(world: WorldConfig, template: string): FeatureMo
 export function useFeatureNav(area: 'dollhouse' | 'stargirl' | 'village' | 'atelier') {
   const { world, appearance } = useStore();
   return FEATURES.filter((f) => featureMode(world, f.id) === 'on' && !NOT_YET_BUILT.has(f.id) && !(appearance === 'quiet' && f.quietHides))
-    .flatMap((f) => (f.nav ?? []).filter((n) => n.area === area));
+    .flatMap((f) => (f.nav ?? []).filter((n) => n.area === area))
+    .filter((n, i, all) => all.findIndex((m) => m.to === n.to) === i);
 }
 
 /** Wraps a page: if its feature is switched off, show a gentle "resting" note instead. */

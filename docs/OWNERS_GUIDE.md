@@ -37,6 +37,7 @@ This guide is for you, the person who lives here. It doesn't assume you know how
 26. [Time Capsules](#26-time-capsules)
 27. [The Rabbit-hole Map](#27-the-rabbit-hole-map)
 28. [Paths beyond the village](#28-paths-beyond-the-village)
+29. [Charms, pearls and the Games Parlour](#29-charms-pearls-and-the-games-parlour)
 
 ---
 
@@ -445,6 +446,36 @@ Visitors see the paths you've revealed as postcards, plus a cloudy card that say
 - **Hidden** takes *Paths* out of the menu.
 - **Resting** hides every path from visitors after you publish. Nothing is deleted.
 - **Gentle achievement:** walking every revealed path earns *Every Path*.
+
+## 29. Charms, pearls and the Games Parlour
+
+All of this is optional and switched off in Quiet mode. Nothing here counts days, keeps streaks or expects you to come back.
+
+**Achievements** are little celebrations for wandering and making things: finding the secret garden, adopting a companion, sealing a capsule, sorting the post. They appear as a small note when they happen.
+- The *Charms* page lists them all: earned ones glow, and the others simply show how they're found.
+
+**Pearls** are pretend. They are never bought, sold or linked to real money. You earn a few from achievements and from finishing a game.
+- **The Charm Shop** turns pearls into keepsake charms for your **charm bracelet**.
+- Every cosmetic there is **also free** in the Atelier, Companions or Theme Closet. A charm is just a keepsake.
+- If you don't have enough pearls yet, it says so kindly. Nothing is ever locked away.
+
+**The Games Parlour** is a room template: build it in *Atelier → Rooms → Games parlour*, and make it public if visitors may play. It has five untimed games:
+- **Memory cards:** find the eight pairs.
+- **Hidden in the garden:** find five little things among the flowers.
+- **Sorting the post:** pick up a letter, then its pigeonhole. You can also drag it.
+- **The flower table:** choose a vase and up to twelve blooms, then **Keep this bouquet**. Kept bouquets appear in the room and on your Charms page.
+- **Picture puzzle:** slide the tiles until the Swan Lake is whole.
+
+No game is ever needed to open any room or page.
+
+**Where it's saved:**
+- **Yours:** saved privately with your village, and included in backups.
+- **A visitor's:** stays only on their own device, so it is never sent anywhere.
+
+**Feature Manager.** *Achievements*, *Pearls & the Charm Shop* and *Little games* can each be hidden, rested or reset on their own:
+- Resetting achievements keeps your pearls.
+- Resetting pearls clears pearls and charms but keeps achievements.
+- Resetting games clears game results and kept bouquets.
 
 ---
 

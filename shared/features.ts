@@ -30,7 +30,7 @@ export interface FeatureReset {
 
 /** Registered features whose pages arrive in a later phase. Their menu links and cards stay out of
  *  sight until they're built, so nothing in the working app leads nowhere. Shrinks every phase. */
-export const NOT_YET_BUILT = new Set(['pearls', 'minigames']);
+export const NOT_YET_BUILT = new Set<string>([]);
 
 export interface FeatureDef {
   id: string;
@@ -86,7 +86,7 @@ export const FEATURES: FeatureDef[] = [
   { id: 'capsules', name: 'Time capsules', group: 'Creative Spaces', about: 'Seal letters, photos and links for a future day. You can always open them early.', defaultMode: 'on', routes: ['/dollhouse/capsules'], nav: [{ label: 'Time Capsules', to: '/dollhouse/capsules', area: 'dollhouse' }], reset: { kinds: ['capsule'], what: 'Deletes every time capsule.' } },
 
   // ── Gamification ──
-  { id: 'achievements', name: 'Achievements', group: 'Gamification', about: 'Little celebrations for exploring and making things. Never for productivity, never streaks.', defaultMode: 'on', quietHides: true, routes: ['/dollhouse/charms'], reset: { progress: ['achievements'], local: ['rm-achievements'], what: 'Forgets earned achievements.' } },
+  { id: 'achievements', name: 'Achievements', group: 'Gamification', about: 'Little celebrations for exploring and making things. Never for productivity, never streaks.', defaultMode: 'on', quietHides: true, routes: ['/dollhouse/charms'], nav: [{ label: 'Charms', to: '/dollhouse/charms', area: 'dollhouse' }], reset: { progress: ['achievements'], local: ['rm-achievements'], what: 'Forgets earned achievements.' } },
   { id: 'pearls', name: 'Pearls & the Charm Shop', group: 'Gamification', about: 'Pretend pearls earned by playing and exploring, spent on cosmetic charms. No real money, ever — and everything stays available in the Atelier anyway.', defaultMode: 'on', quietHides: true, nav: [{ label: 'Charms', to: '/dollhouse/charms', area: 'dollhouse' }], reset: { progress: ['pearls', 'unlocked'], local: ['rm-pearls'], what: 'Sets pearls back to zero and forgets unlocked charms.' } },
   { id: 'minigames', name: 'Little games', group: 'Gamification', about: 'Memory cards, hidden objects, letter sorting, flower arranging and a picture puzzle. Relaxing, untimed, optional.', defaultMode: 'on', quietHides: true, templates: ['games'], reset: { progress: ['games'], local: ['rm-games'], what: 'Forgets game results and saved bouquets.' } },
 
