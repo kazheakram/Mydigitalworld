@@ -10,6 +10,7 @@ import { Loading, Toasts } from './ui/kit';
 import { PreviewBanner } from './ui/Nav';
 import { SeasonLayer } from './world/Season';
 import { PlacesPage, WorldPage } from './world/WorldPage';
+import { PathsPage } from './world/Paths';
 import { RoomPage } from './rooms/RoomPage';
 import { LoginPage, NotFound, SearchPage, SharePage } from './pages';
 import { SetupPage } from './SetupPage';
@@ -43,6 +44,8 @@ const CommonplacePage = lazy(() => import('./private/CommonplacePage').then((m) 
 const ScrapbookPage = lazy(() => import('./private/Scrapbook').then((m) => ({ default: m.ScrapbookPage })));
 const LettersPage = lazy(() => import('./private/Letters').then((m) => ({ default: m.LettersPage })));
 const LetterViewPage = lazy(() => import('./private/Letters').then((m) => ({ default: m.LetterViewPage })));
+const CapsulesPage = lazy(() => import('./private/Capsules').then((m) => ({ default: m.CapsulesPage })));
+const RabbitMapPage = lazy(() => import('./private/RabbitMap').then((m) => ({ default: m.RabbitMapPage })));
 const BackupsPage = lazy(() => import('./atelier/Studio').then((m) => ({ default: m.BackupsPage })));
 
 /** The following companion only loads for the owner when the Pets feature is on. */
@@ -107,6 +110,7 @@ function Shell() {
         <Routes>
           <Route path="/" element={<WorldPage />} />
           <Route path="/places" element={<PlacesPage />} />
+          <Route path="/paths" element={<PathsPage />} />
           <Route path="/room/:roomId" element={<RoomPage />} />
           <Route path="/room/:roomId/:itemId" element={<RoomPage />} />
           <Route path="/search" element={<SearchPage />} />
@@ -132,6 +136,8 @@ function Shell() {
           <Route path="/stargirl/rabbit-holes" element={<RabbitHolesPage />} />
           <Route path="/stargirl/discoveries" element={<DiscoveriesPage />} />
           <Route path="/stargirl/picks" element={<PicksPage />} />
+          <Route path="/stargirl/map" element={<RabbitMapPage />} />
+          <Route path="/dollhouse/capsules" element={<CapsulesPage />} />
           <Route path="/atelier" element={<WorldEditorPage />} />
           <Route path="/atelier/room/:roomId" element={<RoomEditorPage />} />
           <Route path="/atelier/theme" element={<ThemeClosetPage />} />

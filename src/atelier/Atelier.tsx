@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { InteriorBackground } from '../world/Interior';
+import { LandscapeBackground } from '../world/Landscapes';
 import { award } from '../lib/progress';
 import { Link, NavLink, useParams } from 'react-router-dom';
 import type { SceneObject, WorldConfig } from '../../shared/types';
@@ -152,7 +153,7 @@ export function RoomEditorPage() {
         {bg && <button className="btn small ghost" onClick={() => setBg('')}>Theme background</button>}
       </p>
       <SceneEditor kind="room" width={1200} height={750} objects={hist.value} onChange={hist.commit} rooms={world.rooms}
-        background={room.settings?.interior && !bg ? <InteriorBackground interior={room.settings.interior} /> : <rect width={1200} height={750} fill={bg || 'var(--c-cream)'} />}
+        background={room.template === 'region' && !bg ? <LandscapeBackground kind={room.settings?.landscape ?? 'meadow'} /> : room.settings?.interior && !bg ? <InteriorBackground interior={room.settings.interior} /> : <rect width={1200} height={750} fill={bg || 'var(--c-cream)'} />}
         toolbarExtra={<PublishBar dirty={dirty} onSave={save} hist={hist} />} />
     </AtelierShell>
   );

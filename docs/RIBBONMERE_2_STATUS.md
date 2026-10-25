@@ -68,11 +68,21 @@ Work happens on branch `claude/ribbonmere-2`. Your live site keeps running from 
 - **Photo frames** in rooms and scrapbooks (see Phase 2).
 - **Image exporter:** theme colours are resolved; HTML text is redrawn as SVG text so browsers allow PNGs.
 
+### Phase 5: discovery & regions
+- **Time Capsules:**
+  - A letter, photos and links, with an open date. Contents stay hidden while sealed.
+  - You can open early, reseal or unseal to change. Capsules are always private.
+- **Rabbit-hole Map:** expeditions as stars with their discoveries, drag to arrange, threads across expeditions, pan/zoom, search, topic filters; saved on each expedition.
+- **Paths beyond the village:**
+  - Seven illustrated landscapes as region rooms, opened privately, revealed when you choose, arranged in the room editor.
+  - A visitor-facing postcards page with a cloudy teaser that leaks nothing.
+  - The *Every Path* achievement.
+
 **How it was tested:**
 
 | Command | Result |
 |---|---|
-| `npm run test:v2` | 44 browser checks, all passing, no browser errors |
+| `npm run test:v2` | 53 browser checks, all passing, no browser errors |
 | `npm test` | 12 server tests |
 | `npm run test:rules` | 8 rule groups, including the new kinds test and the shared-letter test |
 | `npm run test:functions` | 6 |
@@ -87,6 +97,10 @@ The `test:v2` run covers these lifecycles:
 - **Bedroom:** create → decorate → private to visitors → hide → rest → on, with decoration kept, then reset. The reset touches only the bedroom.
 - **Newspaper / Parlour / Journal / Commonplace:** each one is used, hidden or rested and turned back on with data kept, then reset. The newspaper reset leaves subscriptions alone, the journal reset leaves books alone, the commonplace reset leaves books alone, and parlour videos survive resting both the Parlour and YouTube feeds. The Commonplace Book stays private to visitors.
 - **Shops / Museum / Scrapbook / Letters:** each is created, used, rested and turned back on, then reset. Visitors see a public shop but never a private one, and the museum stays private. Each shop's reset spares the Library and the Gramophone Pavilion. PNG and SVG downloads are checked to be real image files. A shared letter opens only by its link and is never listed or shown in the guestbook, and stop sharing takes effect at once.
+- **Capsules / Map / Paths:**
+  - Sealed contents stay hidden; open early and reseal work; capsules are always private.
+  - Dragged positions and threads are saved and survive a reload; search, zoom and filters work; the map reset leaves discoveries alone.
+  - Unrevealed paths are never sent to visitors, revealed ones open for them, and hidden/resting work as described.
 - **World:** weather and light reach visitors after publish, interactions work, Quiet and resting turn them off without touching buildings, and resetting weather leaves the light setting alone.
 
 Screenshots are in `docs/screenshots/v2/`.
@@ -95,7 +109,6 @@ Screenshots are in `docs/screenshots/v2/`.
 
 | Phase | Features |
 |---|---|
-| 5 | Time Capsules, the Rabbit Hole discovery map, seven new landscape regions with the Paths page |
 | 6 | Charms page (achievements, pearls, keepsake charms), five minigames |
 | 7 | Final appearance polish, and full lifecycle tests for every feature on the cloud backend |
 

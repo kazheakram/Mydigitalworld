@@ -34,6 +34,9 @@ This guide is for you, the person who lives here. It doesn't assume you know how
 23. [Shops and the museum: Picture House, Record Shop, Bookshop, Memory Museum](#23-shops-and-the-museum)
 24. [The Scrapbook Studio](#24-the-scrapbook-studio)
 25. [The Writing Desk (letters)](#25-the-writing-desk)
+26. [Time Capsules](#26-time-capsules)
+27. [The Rabbit-hole Map](#27-the-rabbit-hole-map)
+28. [Paths beyond the village](#28-paths-beyond-the-village)
 
 ---
 
@@ -402,6 +405,46 @@ Reset deletes scrapbooks only. Your uploaded photos stay in the media library.
   - **Stop sharing** works at once.
   - While the Letter desk is resting, shared links show a "resting" note instead.
 - **Reset** deletes your letters. Guestbook letters from visitors are a separate thing and are never touched.
+
+## 26. Time Capsules
+
+*Dollhouse → ✿ more rooms → Time Capsules.*
+
+- **Seal a capsule:** press **+ A new time capsule**. Give it a name and the day it should open, then add a letter to your future self, photographs and links. Press **Seal the capsule**.
+- **While it's sealed,** its card says when it opens and how many days are left. Its contents stay hidden. On the day, it glows and says *ready to open*.
+- **Nothing is ever locked away:**
+  - **Open early…** asks once, gently, then opens it.
+  - **Seal it again** puts it back.
+  - **Unseal to change** lets you add or edit things.
+- Capsules are **always private**. Even a mistake can't make one public. Reset deletes capsules only.
+
+## 27. The Rabbit-hole Map
+
+*Stargirl → ✿ more rooms → Discovery Map.*
+
+Each expedition from Rabbit Holes is a **star**, and its discoveries sit around it.
+
+- **Drag** anything to where it makes sense to you. Drag the background to pan, and scroll (or use ＋ / －) to zoom. *Fit* brings everything back into view.
+- **Threads:** select a node, press **🧵 Draw a thread**, then click another node, even one from a different expedition. Do the same again to remove a thread.
+- **Finding things:** search lights up matching nodes. The expedition chips show or hide whole expeditions.
+- **Saving:** positions and threads save automatically.
+- **Reset** forgets only the layout and threads. Your expeditions and discoveries are never touched.
+
+## 28. Paths beyond the village
+
+*The **Paths** link in the village menu (also at `/paths`).*
+
+There are seven landscapes: the Whispering Wood, the Seaside Promenade, the Vintage Shopping Street, the Rose Maze, the Winter Village, the Wildflower Meadow and the Swan Lake. Each has its own illustrated background and a starting arrangement of artwork. There are no quests or timers; they are places to wander.
+
+1. **Open this path** creates it privately. You see a preview of every landscape, while visitors see only clouds.
+2. **Arrange** opens it in the Atelier room editor, so you can move things or add your own pictures, text and link signs.
+3. **Reveal to visitors** makes it public once you publish. **Hide under the clouds** makes it private again.
+
+Visitors see the paths you've revealed as postcards, plus a cloudy card that says more are still waiting. Nothing about the unrevealed ones is sent to their browser.
+
+- **Hidden** takes *Paths* out of the menu.
+- **Resting** hides every path from visitors after you publish. Nothing is deleted.
+- **Gentle achievement:** walking every revealed path earns *Every Path*.
 
 ---
 
