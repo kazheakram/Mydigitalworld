@@ -471,6 +471,92 @@ try {
   assert.equal(await a.getByRole('button', { name: /migrated from sqlite/i }).count(), 0, 'replace mode replaced the content');
   step('replace-restore requires a safety backup first, then restores the earlier state');
 
+  // ── 16b. Ribbonmere 2.0 on the cloud: features, privacy of the new kinds, sharing, resets ──
+  const kindDocs = async (kind: string) => (await adminList('items')).filter((d) => d.f.kind?.stringValue === kind);
+  const fmSet = async (name: string, mode: 'On' | 'Hidden' | 'Resting') => {
+    await a.goto(`${BASE}/atelier/features`);
+    const card = a.getByRole('article', { name });
+    await card.getByRole('radio', { name: mode, exact: true }).click();
+    await card.locator('.fm-badge').filter({ hasText: mode }).waitFor();
+    await a.waitForTimeout(800);
+  };
+  await fmSet('The Letterbox', 'Hidden');
+  const draft = JSON.parse((await (await fetch(`${FS}/config/world_draft`, { headers: { authorization: 'Bearer owner' } })).json()).fields.json.stringValue);
+  assert.equal(draft.features?.letterbox?.mode, 'hidden', 'feature mode saved to the cloud draft');
+  await fmSet('The Letterbox', 'On');
+  step('2.0: Feature Manager choices save to Firestore');
+
+  await a.goto(`${BASE}/dollhouse/pets`);
+  await a.getByRole('button', { name: /white bunny/i }).click();
+  await a.getByLabel(/what will you call them/i).fill('Clover');
+  await a.getByRole('button', { name: 'Bring them home' }).click();
+  await a.getByRole('article', { name: 'Clover' }).waitFor({ timeout: 15_000 });
+  await a.locator('.companion').waitFor({ timeout: 15_000 });
+  await a.waitForTimeout(1500);
+  const pets = await kindDocs('pet');
+  assert.equal(pets.length, 1); assert.equal(pets[0].f.visibility.stringValue, 'private', 'pets stored private');
+  assert.equal(await raw(`items/${pets[0].id}`), 403, 'visitors cannot read a pet');
+  step('2.0: a companion is adopted and follows the owner; the record is private in Firestore');
+
+  await a.goto(`${BASE}/dollhouse/capsules`);
+  await a.getByRole('button', { name: '+ A new time capsule' }).click();
+  await a.getByLabel('Name').fill('Cloud capsule');
+  await a.getByLabel('A letter to the future').fill('Hello from the cloud.');
+  await a.getByRole('button', { name: 'Seal the capsule' }).click();
+  await a.getByRole('article', { name: 'Cloud capsule' }).waitFor({ timeout: 15_000 });
+  await a.goto(`${BASE}/dollhouse/commonplace`);
+  await a.getByRole('button', { name: 'Open a commonplace book' }).click();
+  await a.getByRole('button', { name: '+ A new entry' }).click();
+  await a.getByLabel('The words').fill('A cloud is a pressed flower of the sky.');
+  await a.getByRole('button', { name: /^save/i }).click();
+  await a.locator('.cp-entry').first().waitFor({ timeout: 15_000 });
+  await a.goto(`${BASE}/dollhouse/scrapbook`);
+  await a.getByRole('button', { name: '+ A new scrapbook' }).click();
+  await a.getByLabel('Title').fill('Cloud scrapbook');
+  await a.getByRole('button', { name: 'Begin' }).click();
+  await a.getByRole('button', { name: 'Add Satin bow' }).click();
+  await a.getByText('saved ♡').waitFor({ timeout: 15_000 });
+  await a.waitForTimeout(2000);
+  const [caps, cps, sbs] = [await kindDocs('capsule'), await kindDocs('excerpt'), await kindDocs('scrapbook')];
+  assert.equal(caps.length, 1); assert.equal(caps[0].f.visibility.stringValue, 'private');
+  assert.equal(await raw(`items/${caps[0].id}`), 403, 'capsules refused to visitors');
+  assert.equal(cps.length, 1); assert.equal(await raw(`items/${cps[0].id}`), 403, 'private commonplace entry refused');
+  assert.equal(sbs.length, 1);
+  assert.equal(sbs[0].f.data.mapValue.fields.pages.arrayValue.values[0].mapValue.fields.objects.arrayValue.values.length, 1, 'scrapbook page saved');
+  step('2.0: capsules, commonplace entries and scrapbooks save to Firestore and stay private');
+
+  await a.goto(`${BASE}/dollhouse/letters`);
+  await a.getByRole('button', { name: '+ Write a letter' }).click();
+  await a.getByLabel('To').fill('Clementine');
+  await a.getByLabel('Your letter').fill('Written in the cloud.');
+  await a.getByText('saved ♡').waitFor({ timeout: 15_000 });
+  await a.waitForTimeout(1200);
+  const letter = (await kindDocs('letter'))[0];
+  assert.equal(await raw(`items/${letter.id}`), 403, 'draft letter refused');
+  await a.getByRole('button', { name: 'Share by link…' }).click();
+  await a.getByLabel('Link to this letter').waitFor({ timeout: 15_000 });
+  await a.waitForTimeout(1500);
+  assert.equal(await raw(`items/${letter.id}`), 200, 'shared letter readable by its id');
+  await v.goto(`${BASE}/letter/${letter.id}`);
+  await v.getByRole('button', { name: /break the seal/i }).click({ timeout: 15_000 });
+  await v.getByText('Written in the cloud.').waitFor();
+  await a.getByRole('button', { name: 'Stop sharing' }).click();
+  await a.waitForTimeout(1500);
+  assert.equal(await raw(`items/${letter.id}`), 403, 'stop sharing closes the letter at once');
+  step('2.0: a letter is private until shared by link, readable by its link only, and closes again at once');
+
+  await a.goto(`${BASE}/atelier/features`);
+  await a.getByRole('article', { name: 'Pet companions' }).getByRole('button', { name: 'reset…' }).click();
+  await a.getByLabel(/type RESET/i).fill('RESET');
+  await a.getByRole('button', { name: 'Reset', exact: true }).click();
+  await a.getByText(/was reset/).waitFor({ timeout: 20_000 });
+  await a.waitForTimeout(1000);
+  assert.equal((await kindDocs('pet')).length, 0, 'pets reset in Firestore');
+  assert.equal((await kindDocs('capsule')).length, 1, 'capsules untouched by the pets reset');
+  const prog = await kindDocs('progress');
+  assert.ok(prog.length === 1 && prog[0].f.visibility.stringValue === 'private' && await raw(`items/${prog[0].id}`) === 403, 'achievements and pearls stored privately');
+  step('2.0: resetting a feature deletes only its own documents; progress is private');
+
   await a.goto(`${BASE}/atelier/village`);
   await a.getByLabel('Current password').fill(PASSWORD);
   await a.getByLabel(/New password/).fill('new-pink-ribbons-2');

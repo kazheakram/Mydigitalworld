@@ -879,6 +879,40 @@ export function sections(t: T): Record<string, () => Promise<void>> {
       await setMode('Little games', 'On');
       step('achievements, pearls and games each rest and reset on their own without touching the others');
     },
+    polish: async () => {
+      const pages = ['/dollhouse', '/dollhouse/pets', '/dollhouse/bedroom', '/dollhouse/newspaper', '/dollhouse/parlour', '/dollhouse/reading-journal', '/dollhouse/commonplace',
+        '/dollhouse/scrapbook', '/dollhouse/letters', '/dollhouse/capsules', '/dollhouse/charms', '/stargirl/map', '/paths', '/atelier/features'];
+      const phone = await t.ownerCtx.browser()!.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, storageState: await t.ownerCtx.storageState() });
+      const m = await phone.newPage();
+      const wide: string[] = [];
+      for (const pth of pages) {
+        await m.goto(`${BASE}${pth}`);
+        await m.waitForLoadState('networkidle');
+        await m.waitForTimeout(400);
+        const [sw, iw] = await m.evaluate(() => [document.documentElement.scrollWidth, window.innerWidth]);
+        if (sw > iw + 1) wide.push(`${pth} (${sw} > ${iw})`);
+      }
+      await m.goto(`${BASE}/dollhouse/letters`); await shot(m, 'phone-letters');
+      await m.goto(`${BASE}/paths`); await shot(m, 'phone-paths');
+      await phone.close();
+      assert.deepEqual(wide, [], `no sideways scrolling on a phone: ${wide.join(', ')}`);
+      step(`all ${pages.length} new pages fit a phone screen without sideways scrolling`);
+      for (const a of ['midnight', 'pixie', 'quiet']) {
+        await o.goto(`${BASE}/dollhouse`);
+        await o.evaluate((x) => localStorage.setItem('rm-appearance', x), a);
+        for (const pth of ['/dollhouse/newspaper', '/dollhouse/charms', '/dollhouse/letters']) {
+          await o.goto(`${BASE}${pth}`);
+          await o.waitForTimeout(500);
+          assert.equal(await o.evaluate(() => document.documentElement.dataset.appearance), a);
+          await shot(o, `appearance-${a}-${pth.split('/').pop()}`);
+        }
+      }
+      await o.goto(`${BASE}/dollhouse`);
+      const quietNav = await o.locator('.ribbon-nav').innerText();
+      assert.ok(!/charms/i.test(quietNav), 'Quiet tucks gamification out of the menus');
+      await o.evaluate(() => localStorage.removeItem('rm-appearance'));
+      step('new pages wear Midnight, Pixie and Quiet; Quiet hides gamification from the menus');
+    },
     world: async () => {
       await o.goto(`${BASE}/atelier/features`);
       await o.getByRole('article', { name: 'Weather' }).getByRole('combobox').selectOption('snow');

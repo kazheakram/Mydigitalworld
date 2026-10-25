@@ -16,6 +16,20 @@ It has three modes:
 
 Behind them is **the Atelier**, your design studio. It has a Canva-style map and room editor, the Theme Closet, room templates, a media library, village settings and backups.
 
+### Ribbonmere 2.0
+
+Everything in 2.0 is optional and reversible from one place, **Atelier → Features**. Each feature can be switched on, hidden, rested or reset, and a reset only clears that feature's own things. There are no streaks, no decaying pets and no guilt notifications.
+
+| Area | What's new |
+|---|---|
+| **A living world** | Pet companions (bunny, fawn, kitten, swan) with accessories. *My Bedroom*. Weather. Day & night light. Little tap interactions. Seven landscapes to wander on the *Paths* page. |
+| **Your personal internet** | The Morning Paper (daily editions from your feeds). The Video Parlour. The Reading Journal. The Commonplace Book. Time Capsules. The Rabbit-hole Map. |
+| **Creative spaces** | Picture House. Record Shop. Bookshop. Memory Museum. Scrapbook Studio with picture downloads. Writing Desk with wax seals and optional share-by-link. |
+| **Gentle play** | Achievements, pretend pearls, a Charm Shop where everything is also free elsewhere, and five untimed games in a Games Parlour. |
+| **Appearance** | Coquette, Quiet (calm and readable; Alt + Q), Pixie (pixel art) and Midnight. |
+
+What's built, how it was tested and what's left is recorded in **[docs/RIBBONMERE_2_STATUS.md](docs/RIBBONMERE_2_STATUS.md)**.
+
 👉 **New here? Read the [Owner's Guide](docs/OWNERS_GUIDE.md).** It's written for people who don't code.
 👉 **Putting it online for free:** follow the [Cloud Setup Guide](docs/CLOUD_SETUP_GUIDE.md) (Cloudflare Pages + Firebase, no credit card).
 
@@ -98,7 +112,9 @@ npm test                              # home server: 12 API tests (auth, privacy
 npm run test:rules                    # cloud: Firestore security rules on the official emulator (outsiders, other accounts, guests, owner)
 npm run build && npm run test:functions  # cloud: Pages Functions in Cloudflare's local runtime + real RS256 token checks
 npm run screenshots                   # home server: end-to-end in Chromium (17 checks) + screenshots
-npm run test:cloud                    # cloud: end-to-end in Chromium against Firebase emulators + wrangler (24 checks)
+npm run test:cloud                    # cloud: end-to-end in Chromium against Firebase emulators + wrangler (incl. 2.0 checks)
+npm run build && npm run test:v2      # Ribbonmere 2.0: every feature's lifecycle (use → hide → rest → on → reset), privacy, appearance, phone layout
+                                      #   (run some sections only: npm run test:v2 -- pets letters paths)
 ```
 
 The cloud end-to-end run covers signing in, seeding the village, the setup checklist, and privacy (checked against Firestore directly, not only the pages). It also covers live sync between two devices, offline editing, private-by-default images, the RSS reader through the function, the letterbox and expeditions, autosave, draft and publish, theme sync, the moderated and rate-limited guestbook, search, backups, migrating a real SQLite database, every room template, bookmarks, widgets, new rooms starting private, checkpoints, OPML, replace-restore guarded by a safety backup, password change, the phone layout and reduced motion.

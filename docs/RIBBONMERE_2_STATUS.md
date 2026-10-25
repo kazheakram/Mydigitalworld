@@ -93,7 +93,7 @@ Work happens on branch `claude/ribbonmere-2`. Your live site keeps running from 
 | `npm run test:rules` | 8 rule groups, including the new kinds test and the shared-letter test |
 | `npm run test:functions` | 6 |
 | `npm run screenshots` | 17 original browser checks |
-| `npm run test:cloud` | 24 cloud checks on the emulators |
+| `npm run test:cloud` | 29 cloud checks on the emulators, including 5 for 2.0 (see below) |
 
 The `test:v2` run covers these lifecycles:
 - **Letterbox:** hide → rest → on, data kept.
@@ -116,13 +116,17 @@ The `test:v2` run covers these lifecycles:
 
 Screenshots are in `docs/screenshots/v2/`.
 
-## Not built yet (coming in later phases)
+**On the cloud version** (Firebase emulators with the real security rules, plus wrangler), `npm run test:cloud` now also checks Ribbonmere 2.0. It works through the real pages and then reads Firestore directly:
+- Feature Manager choices are saved to the cloud draft.
+- A companion is adopted and follows the owner. Its record is private, and visitors are refused.
+- Capsules, commonplace entries and scrapbook pages are saved, and the private ones are refused to visitors.
+- A letter stays private until it's shared by link. Once shared, it opens by its link. Stop sharing closes it again at once.
+- Resetting Companions deletes only pet documents. Owner progress is stored privately.
 
-| Phase | Features |
-|---|---|
-| 7 | Final appearance polish, and full lifecycle tests for every feature on the cloud backend |
+## Still to do (Phase 7)
 
-These features already appear in the Feature Manager with a **coming soon** label, so you can set them up ahead of time. Their menu links and Dollhouse cards stay hidden until they're built, so nothing in the site leads to a missing page.
+- **Cloud lifecycle coverage:** the cloud run checks the 2.0 features that store new kinds of data, plus a feature reset. The full hide → rest → on → reset lifecycle of *every* feature runs on the home-server version only. The screens are identical, so only the storage layer differs.
+- **A phone and appearance pass over every new page:** the test is written (`npm run test:v2 -- polish`). It checks 14 new pages for sideways scrolling at phone width, takes screenshots in Midnight, Pixie and Quiet, and checks that Quiet tucks gamification out of the menus. It had **not been run yet** when this was written, because the sandbox briefly stopped allowing commands. If it hasn't been run, treat it as untested.
 
 ## Known limitations
 - **One-off cloud sync timing failure:** in one of eight cloud runs this session, the cloud test's live-sync check (a book added on device A appearing on device B within 15 seconds on the local emulator) timed out once. It passed on the immediate rerun and in every other run. This is noted here rather than hidden; if it recurs, it is the first thing to look at in Phase 7.
