@@ -12,12 +12,14 @@ import { Icon, TEMPLATE_ICON } from '../ui/Icon';
 import { Prose } from '../lib/markdown';
 import { WelcomeRoom, LibraryRoom, JournalRoom, GalleryRoom, MusicRoom } from './templatesA';
 import { CommonplaceRoom } from './Commonplace';
+import { BookstoreRoom, CinemaRoom, MuseumRoom, RecordStoreRoom } from './templatesC';
 import { PostOfficeRoom, CafeRoom, GardenRoom, ObservatoryRoom, SecretRoom, CollectionRoom, FreeformRoom } from './templatesB';
 
 const TEMPLATES: Record<string, (p: { room: Room; itemId?: string }) => ReactNode> = {
   welcome: WelcomeRoom, library: LibraryRoom, journal: JournalRoom, gallery: GalleryRoom, music: MusicRoom,
   postoffice: PostOfficeRoom, cafe: CafeRoom, garden: GardenRoom, observatory: ObservatoryRoom, secret: SecretRoom,
   collection: CollectionRoom, freeform: FreeformRoom, commonplace: CommonplaceRoom,
+  cinema: CinemaRoom, recordstore: RecordStoreRoom, bookstore: BookstoreRoom, museum: MuseumRoom,
 };
 
 export function RoomPage() {

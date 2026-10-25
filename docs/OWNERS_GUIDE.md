@@ -31,6 +31,9 @@ This guide is for you, the person who lives here. It doesn't assume you know how
 20. [The Video Parlour](#20-the-video-parlour)
 21. [The Reading Journal](#21-the-reading-journal)
 22. [The Commonplace Book](#22-the-commonplace-book)
+23. [Shops and the museum: Picture House, Record Shop, Bookshop, Memory Museum](#23-shops-and-the-museum)
+24. [The Scrapbook Studio](#24-the-scrapbook-studio)
+25. [The Writing Desk (letters)](#25-the-writing-desk)
 
 ---
 
@@ -346,6 +349,59 @@ The Bookshop's books (coming in a later phase) are kept separate from these stat
 - **Export as text:** downloads the entries you're looking at as a tidy text (Markdown) file you can keep or print.
 - **Privacy:** it is a room underneath, and it starts **private**. To share it, change its visibility in *Atelier → Rooms* and give it a building on the map. Each entry also has its own visibility.
 - **Reset** deletes commonplace entries only.
+
+## 23. Shops and the museum
+
+These four are new **room templates**. Build one in *Atelier → Rooms → Build a new room*. Each starts private and gets its own building on the map: a picture house, a little shopfront, or the museum. To show one to visitors, make it **Public** in the room list, then publish.
+
+| Room | What's inside | Owner tools (*only you see this* bar) |
+|---|---|---|
+| **Picture House** | Your films as posters (upload a poster, or get a painted one in a colour you pick), with year, director, hearts, review, genres and moods, collections and a link to where to watch it legally. A marquee shows what you watched last. Filter by watched, favourite, watchlist or collection. | *+ A film*, *+ To the watchlist*, *Collections…* |
+| **Record Shop** | Records flip through wooden **crates**: sleeve art, format (vinyl, CD, cassette, digital), year, hearts and a review. Links to YouTube, Spotify or SoundCloud open a player; other links (e.g. Bandcamp) become a "Listen" button. | *+ A record*, *Crates…* |
+| **Bookshop** | Themed **displays** of recommendations with handwritten cards, a **wishlist**, and pressed-flower secrets tucked inside books. Nothing is for sale. Its books are separate from your Library and don't count in the Reading Journal. | *+ A book for the shop*, *Displays…* |
+| **Memory Museum** | Memories hang in gilded frames in **exhibition halls**, or along a **timeline** by year. Each has a photo, date, place, who you were with, and the story. Memories are private by default, like the room. | *+ A memory*, *Exhibitions…* |
+
+**Resting** one of these hides its room and building everywhere, and visitors stop receiving it after you publish. Nothing inside is deleted.
+
+**Reset** only clears that room's own things:
+- Picture House: every film.
+- Record Shop: records in record-shop rooms only. The Gramophone Pavilion's records stay.
+- Bookshop: books in bookshop rooms only. Your Library stays.
+- Memory Museum: every memory.
+
+## 24. The Scrapbook Studio
+
+*Dollhouse → ✿ more rooms → Scrapbook.*
+
+1. Press **+ A new scrapbook** and give it a title.
+2. Each page opens in the same editor as the village map. You can add:
+   - photos from your media library, with a frame;
+   - **stickers** from the artwork shelves (bows, hearts, stamps, butterflies, pearls, furniture, creatures);
+   - **text** for captions and **link signs**.
+3. Choose a **paper** for each page: cream card, kraft, pink gingham, lined notebook or midnight velvet. Add or remove pages with the buttons above the editor.
+4. Everything **saves automatically** (watch for *saved ♡*). You can change the title and cover colour at any time.
+5. **Download page as PNG** saves the page as a picture, with your fonts included. *…as SVG* saves a scalable version.
+
+Reset deletes scrapbooks only. Your uploaded photos stay in the media library.
+
+## 25. The Writing Desk
+
+*Dollhouse → ✿ more rooms → Letters.*
+
+- **Write a letter:** fill in *To*, the date, your letter (leave a blank line between paragraphs), the closing and *From*. The preview on the right updates as you type and saves automatically.
+- **Dress it:**
+  - stationery: cream, rose, lavender, forget-me-not, kraft or midnight;
+  - lettering: copperplate script, handwriting, book serif or typewriter;
+  - a stamp, plus envelope, ribbon and wax colours;
+  - a **seal mark**: a heart, flower, star, moon, envelope or an initial.
+- **Download:** *Download letter (PNG)* and *Download envelope* save pictures you can print or send yourself.
+- **Private by default:** every letter starts as a private draft.
+- **Share by link (optional):**
+  - Only someone with the exact link can open the letter. They see a sealed envelope and break the seal to read it.
+  - A shared letter is never listed, never searched and never shown in the guestbook.
+  - **Stop sharing** works at once.
+  - While the Letter desk is resting, shared links show a "resting" note instead.
+- **Reset** deletes your letters. Guestbook letters from visitors are a separate thing and are never touched.
 
 ---
 

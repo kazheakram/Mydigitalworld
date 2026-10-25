@@ -337,3 +337,82 @@ export function Fountain(_: P) {
     </g>
   );
 }
+
+// ── Ribbonmere 2.0: the picture house, a little shopfront and the memory museum ──
+export function PictureHouse({ c }: P) {
+  return (
+    <g>
+      <Shadow w={170} />
+      <rect x={30} y={62} width={140} height={126} fill={wallOf(c)} {...line} />
+      <path d="M24 66 H176 V52 Q100 22 24 52 Z" fill={roofOf(c)} {...line} />
+      <Bow x={100} y={34} s={0.8} />
+      {/* marquee with bulbs */}
+      <rect x={40} y={80} width={120} height={30} rx={4} fill={tok('cream')} {...line} />
+      {Array.from({ length: 13 }, (_, i) => <circle key={i} className="glow-window" cx={44 + i * 9.3} cy={80} r={2.4} fill={winOf(c)} />)}
+      {Array.from({ length: 13 }, (_, i) => <circle key={`b${i}`} className="glow-window" cx={44 + i * 9.3} cy={110} r={2.4} fill={winOf(c)} />)}
+      <text x={100} y={101} textAnchor="middle" fontSize={15} fontFamily="var(--font-script)" fill={accOf(c)}>Picture House</text>
+      {/* poster cases */}
+      <rect x={40} y={122} width={26} height={38} rx={2} fill={trimOf(c)} {...thin} />
+      <rect x={44} y={126} width={18} height={30} fill={tok('pink')} />
+      <circle cx={53} cy={136} r={5} fill={tok('cream')} />
+      <rect x={134} y={122} width={26} height={38} rx={2} fill={trimOf(c)} {...thin} />
+      <rect x={138} y={126} width={18} height={30} fill={tok('sky')} />
+      <path d="M140 152 l6 -12 l6 12 z" fill={tok('cream')} />
+      {/* doors under a velvet curtain */}
+      <path d="M78 188 V128 H122 V188 Z" fill={accOf(c)} {...line} />
+      <path d="M78 128 Q88 150 80 176 M122 128 Q112 150 120 176" stroke={tok('roseDeep')} strokeWidth={5} fill="none" opacity={0.8} />
+      <path d="M100 132 V188" {...thin} />
+      <rect x={92} y={168} width={16} height={4} rx={2} fill={tok('gold')} />
+    </g>
+  );
+}
+
+export function Shopfront({ c }: P) {
+  return (
+    <g>
+      <Shadow w={160} />
+      <rect x={36} y={60} width={128} height={128} fill={wallOf(c)} {...line} />
+      <path d="M30 64 L48 30 H152 L170 64 Z" fill={roofOf(c)} {...line} />
+      <Window x={88} y={36} w={24} h={22} c={c} box={false} />
+      {/* striped awning */}
+      <path d="M32 92 H168 L174 112 H26 Z" fill={trimOf(c)} {...line} />
+      {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => <path key={i} d={`M${34 + i * 17} 92 h8.5 l1.5 20 h-11 z`} fill={accOf(c)} opacity={0.85} />)}
+      <Scallops x={26} y={116} w={148} n={9} fill={accOf(c)} />
+      <rect x={52} y={70} width={96} height={18} rx={3} fill={tok('cream')} {...thin} />
+      <path d="M62 79 H138" stroke={tok('gold')} strokeWidth={2} strokeDasharray="3 3" />
+      {/* display window with little goods */}
+      <rect x={42} y={126} width={62} height={44} rx={3} fill={winOf(c)} {...thin} className="glow-window" />
+      {[48, 58, 68, 78, 88].map((x, i) => <rect key={x} x={x} y={150 - (i % 3) * 4} width={8} height={18 + (i % 3) * 4} fill={[tok('rose'), tok('sageDeep'), tok('pink'), tok('gold'), tok('roseDeep')][i]} opacity={0.85} />)}
+      <circle cx={92} cy={142} r={7} fill={tok('ink')} opacity={0.7} />
+      <circle cx={92} cy={142} r={2} fill={tok('cream')} />
+      <path d="M116 188 V132 a12 12 0 0 1 24 0 V188 Z" fill={accOf(c)} {...line} />
+      <circle cx={134} cy={160} r={2} fill={tok('gold')} />
+      <path d="M150 120 v10 h14 v-10" fill="none" {...thin} />
+      <rect x={148} y={130} width={18} height={12} rx={2} fill={tok('cream')} {...thin} />
+    </g>
+  );
+}
+
+export function Museum({ c }: P) {
+  return (
+    <g>
+      <Shadow w={176} />
+      <rect x={22} y={176} width={156} height={12} fill={trimOf(c)} {...line} />
+      <rect x={30} y={166} width={140} height={12} fill={trimOf(c)} {...line} />
+      <path d="M24 74 L100 28 L176 74 Z" fill={roofOf(c)} {...line} />
+      <path d="M50 70 L100 40 L150 70 Z" fill="none" stroke={trimOf(c)} strokeWidth={2} />
+      <circle cx={100} cy={58} r={8} fill={tok('cream')} {...thin} />
+      <path d="M96 58 a4 4 0 0 1 8 0 q0 4 -4 6 q-4 -2 -4 -6" fill={tok('rose')} />
+      <rect x={28} y={74} width={144} height={12} fill={trimOf(c)} {...line} />
+      <rect x={36} y={86} width={128} height={80} fill={wallOf(c)} {...line} />
+      {[44, 72, 120, 148].map((x) => <g key={x}><rect x={x} y={86} width={12} height={80} fill={trimOf(c)} {...thin} /><path d={`M${x + 4} 90 V162 M${x + 8} 90 V162`} stroke="var(--c-ink)" strokeOpacity={0.12} /></g>)}
+      <path d="M86 166 V112 a14 14 0 0 1 28 0 V166 Z" fill={accOf(c)} {...line} />
+      <Window x={88} y={92} w={24} h={14} c={c} box={false} />
+      <rect x={58} y={110} width={12} height={18} fill={tok('gold')} {...thin} />
+      <rect x={60} y={112} width={8} height={14} fill={tok('pink')} />
+      <rect x={130} y={110} width={12} height={18} fill={tok('gold')} {...thin} />
+      <rect x={132} y={112} width={8} height={14} fill={tok('sky')} />
+      <Bow x={100} y={80} s={0.7} />
+    </g>
+  );
+}

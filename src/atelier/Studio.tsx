@@ -1,3 +1,4 @@
+import { roomFeatureMode } from '../lib/features';
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { Item, Room, RoomTemplate, ThemeTokens } from '../../shared/types';
@@ -160,6 +161,10 @@ const TEMPLATE_INFO: { id: RoomTemplate; name: string; about: string; art: strin
   { id: 'postoffice', name: 'Post office', about: 'Guestbook and contact links', art: 'postoffice' },
   { id: 'secret', name: 'Secret room', about: 'Hidden notes to discover', art: 'chest' },
   { id: 'welcome', name: 'Welcome room', about: 'An introduction and guide', art: 'cottage' },
+  { id: 'cinema', name: 'Picture house', about: 'Films, posters, reviews, collections and a watchlist', art: 'picturehouse' },
+  { id: 'recordstore', name: 'Record shop', about: 'Albums and artists in crates, with reviews and players', art: 'shopfront' },
+  { id: 'bookstore', name: 'Bookshop', about: 'Themed displays of recommendations and a wishlist (separate from your library)', art: 'shopfront' },
+  { id: 'museum', name: 'Memory museum', about: 'Exhibitions and a timeline of your memories (private to start)', art: 'museum' },
   { id: 'commonplace', name: 'Commonplace book', about: 'Quotations, excerpts and reflections with their sources', art: 'townhouse' },
 ];
 
@@ -203,7 +208,7 @@ export function RoomsManagerPage() {
         <section className="lace-card">
           <h2 className="script">Build a new room</h2>
           <div className="template-grid">
-            {TEMPLATE_INFO.map((t) => (
+            {TEMPLATE_INFO.filter((t) => roomFeatureMode(world, t.id) !== 'off').map((t) => (
               <button key={t.id} className={`template-card ${creating === t.id ? 'on' : ''}`} onClick={() => setCreating(t.id)}>
                 <ArtSvg art={t.art} /><strong>{t.name}</strong><small>{t.about}</small>
               </button>

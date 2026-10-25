@@ -170,3 +170,16 @@ test('Ribbonmere 2.0 kinds: the rules know every kind, and always-private kinds 
     await assertFails(getDoc(doc(odb, 'items/prog')));
   }
 });
+
+test('letters: a shared (unlisted) letter opens by its id only; private letters and listing stay closed', async () => {
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    const db = ctx.firestore();
+    await setDoc(doc(db, 'items/letterShared'), item({ kind: 'letter', visibility: 'unlisted', roomId: null, data: { to: 'Clementine', body: 'hello' } }));
+    await setDoc(doc(db, 'items/letterDraft'), item({ kind: 'letter', visibility: 'private', roomId: null, data: { to: 'Secret', body: 'draft' } }));
+  });
+  for (const [who, odb] of outsiders()) {
+    await assertSucceeds(getDoc(doc(odb, 'items/letterShared'))).catch((e) => assert.fail(`${who} could not open a shared letter: ${e.message}`));
+    await assertFails(getDoc(doc(odb, 'items/letterDraft')));
+    await assertFails(getDocs(collection(odb, 'items')));
+  }
+});

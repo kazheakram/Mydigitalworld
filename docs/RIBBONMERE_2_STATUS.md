@@ -51,13 +51,30 @@ Work happens on branch `claude/ribbonmere-2`. Your live site keeps running from 
   - Entries hold words, kind, source, author, page, link, reflection, tags, favourite and a link to your own book, page or note.
   - Search, filters and Markdown export.
 
+### Phase 4: creative spaces
+- **New room templates, each with its own map building:**
+  - **Picture House:** films, painted or uploaded posters, watchlist, favourites, collections, marquee, reviews.
+  - **Record Shop:** crates, sleeves, formats, reviews, players for YouTube, Spotify and SoundCloud.
+  - **Bookshop:** themed displays, recommendation cards, wishlist, pressed-flower secrets, no payments.
+  - **Memory Museum:** exhibition halls, timeline, private by default.
+- **Scrapbook Studio:**
+  - Multi-page books arranged with the Atelier editor, with five papers and autosave.
+  - PNG and SVG export with fonts and images embedded.
+- **Writing Desk:**
+  - Six stationeries, four letterings, stamps, ribbon, wax seal and mark.
+  - Autosaving private drafts.
+  - Optional share-by-link (unlisted), with an envelope that opens for the reader, and stop sharing at any time.
+  - PNG download of the letter and envelope.
+- **Photo frames** in rooms and scrapbooks (see Phase 2).
+- **Image exporter:** theme colours are resolved; HTML text is redrawn as SVG text so browsers allow PNGs.
+
 **How it was tested:**
 
 | Command | Result |
 |---|---|
-| `npm run test:v2` | 31 browser checks, all passing, no browser errors |
+| `npm run test:v2` | 44 browser checks, all passing, no browser errors |
 | `npm test` | 12 server tests |
-| `npm run test:rules` | 7 rule groups, including the new kinds test |
+| `npm run test:rules` | 8 rule groups, including the new kinds test and the shared-letter test |
 | `npm run test:functions` | 6 |
 | `npm run screenshots` | 17 original browser checks |
 | `npm run test:cloud` | 24 cloud checks on the emulators |
@@ -69,6 +86,7 @@ The `test:v2` run covers these lifecycles:
 - **Companions:** adopt → dress → follow → wander map → hide → rest → on, with data kept, then reset. The reset removes only pets and their map spots, and the letterbox is untouched.
 - **Bedroom:** create → decorate → private to visitors → hide → rest → on, with decoration kept, then reset. The reset touches only the bedroom.
 - **Newspaper / Parlour / Journal / Commonplace:** each one is used, hidden or rested and turned back on with data kept, then reset. The newspaper reset leaves subscriptions alone, the journal reset leaves books alone, the commonplace reset leaves books alone, and parlour videos survive resting both the Parlour and YouTube feeds. The Commonplace Book stays private to visitors.
+- **Shops / Museum / Scrapbook / Letters:** each is created, used, rested and turned back on, then reset. Visitors see a public shop but never a private one, and the museum stays private. Each shop's reset spares the Library and the Gramophone Pavilion. PNG and SVG downloads are checked to be real image files. A shared letter opens only by its link and is never listed or shown in the guestbook, and stop sharing takes effect at once.
 - **World:** weather and light reach visitors after publish, interactions work, Quiet and resting turn them off without touching buildings, and resetting weather leaves the light setting alone.
 
 Screenshots are in `docs/screenshots/v2/`.
@@ -77,7 +95,6 @@ Screenshots are in `docs/screenshots/v2/`.
 
 | Phase | Features |
 |---|---|
-| 4 | Memory Museum, Scrapbook studio, Vintage Cinema, Record Store, Bookstore, Letter-Writing Station |
 | 5 | Time Capsules, the Rabbit Hole discovery map, seven new landscape regions with the Paths page |
 | 6 | Charms page (achievements, pearls, keepsake charms), five minigames |
 | 7 | Final appearance polish, and full lifecycle tests for every feature on the cloud backend |

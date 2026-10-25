@@ -918,3 +918,76 @@ kbd { font-family: var(--font-pixel); font-size: .8em; padding: 0 .35em; border:
 .cp-cite { text-align: right; margin: 0 0 6px; color: var(--c-inkSoft); }
 .cp-reflection { border-top: 1px dashed var(--c-pink); padding-top: 6px; }
 .cp-tags .linkish { margin-right: 8px; }
+
+/* ───────── Ribbonmere 2.0 · Phase 4: picture house, record shop, bookshop, museum, scrapbook, letters ───────── */
+.marquee { display: flex; gap: 12px; align-items: baseline; justify-content: center; flex-wrap: wrap; margin: 0 auto 14px; max-width: 640px; border: 3px double var(--c-gold); }
+.marquee strong { font-size: 2rem; font-weight: 400; }
+.poster-wall { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 18px; }
+.poster { position: relative; aspect-ratio: 2 / 3; border: 6px solid #fffdf8; border-radius: 4px; padding: 0; overflow: hidden; cursor: pointer; box-shadow: 0 6px 16px rgba(74, 46, 53, .18); background: var(--c-cream); transition: transform .2s; }
+.poster:hover, .poster:focus-visible { transform: translateY(-4px) rotate(-1deg); }
+.poster img { width: 100%; height: 100%; object-fit: cover; }
+.poster-painted { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end; padding: 14px; color: #fffaf4; text-align: left; background-image: linear-gradient(transparent 40%, rgba(0, 0, 0, .35)) !important; }
+.poster-painted .script { font-size: 1.6rem; line-height: 1.05; }
+.poster.is-watchlist { opacity: .82; }
+.poster-ribbon { position: absolute; top: 6px; right: 8px; color: #fff; text-shadow: 0 1px 4px rgba(0, 0, 0, .4); font-size: 1.3rem; }
+.poster-ticket { position: absolute; top: 10px; left: -4px; background: var(--c-gold); color: #fff; font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; padding: 2px 10px; }
+.crate { margin: 18px 0; }
+.crate-label { display: inline-block; font-size: .85rem; letter-spacing: .16em; text-transform: uppercase; background: #c9a27a; color: #fffaf4; padding: 3px 14px; border-radius: 3px 3px 0 0; margin: 0; }
+.crate-row { display: flex; gap: 0; overflow-x: auto; padding: 18px 12px 10px; background: linear-gradient(#e7cfae, #d4b48b); border-radius: 0 8px 8px 8px; box-shadow: inset 0 -10px 0 rgba(0, 0, 0, .08); }
+.sleeve { flex: none; position: relative; width: 140px; height: 140px; margin-right: -40px; border: 0; padding: 0; border-radius: 3px; cursor: pointer; box-shadow: 2px 3px 10px rgba(0, 0, 0, .25); transform: rotate(calc((var(--i) - 2) * 1deg)); transition: transform .2s, margin .2s; overflow: hidden; }
+.sleeve:hover, .sleeve:focus-visible { transform: translateY(-14px) rotate(0); margin-right: 4px; z-index: 2; }
+.sleeve img { width: 100%; height: 100%; object-fit: cover; }
+.sleeve-text { display: flex; flex-direction: column; justify-content: center; height: 100%; padding: 10px; color: #fffaf4; text-align: center; background: radial-gradient(circle, rgba(0, 0, 0, .25) 0 16%, transparent 17%); }
+.sleeve-format { position: absolute; bottom: 4px; right: 6px; font-size: .62rem; letter-spacing: .1em; text-transform: uppercase; color: #fffaf4; opacity: .85; }
+.recordstore .embed { width: 100%; border: 0; border-radius: 12px; margin: 8px 0; }
+.shop-display { margin: 20px 0; }
+.shop-sign { text-align: center; font-size: 1.8rem; margin: 0 0 6px; }
+.shop-table { display: flex; flex-wrap: wrap; gap: 22px; justify-content: center; padding: 22px 16px 26px; background: linear-gradient(transparent 82%, #c9a27a 82%, #b48d63); border-radius: 8px; }
+.shop-book { position: relative; width: 150px; transform: rotate(var(--tilt)); }
+.shop-cover { width: 150px; height: 215px; border: 0; padding: 0; border-radius: 2px 6px 6px 2px; cursor: pointer; box-shadow: inset 6px 0 0 rgba(0, 0, 0, .12), 3px 4px 12px rgba(0, 0, 0, .2); overflow: hidden; color: #fffaf4; }
+.shop-cover img { width: 100%; height: 100%; object-fit: cover; }
+.shop-cover span { display: flex; flex-direction: column; justify-content: center; height: 100%; padding: 14px; text-align: center; }
+.shop-cover .script { font-size: 1.4rem; line-height: 1.1; }
+.shop-card { position: relative; margin: -24px 0 0 40px; background: #fffdf6; padding: 8px 10px; font-size: .95rem; box-shadow: 0 3px 8px rgba(0, 0, 0, .15); transform: rotate(3deg); }
+.pressed-flower { position: absolute; top: 6px; right: -6px; border: 0; background: none; font-size: 1.3rem; color: var(--c-rose); cursor: pointer; }
+.shop-wishlist { max-width: 560px; margin: 20px auto; }
+.museum-hall { margin: 24px 0; }
+.museum-hall-title { text-align: center; font-size: 2rem; margin: 0 0 4px; }
+.museum-wall { display: flex; flex-wrap: wrap; gap: 26px; justify-content: center; padding: 26px 16px; background: linear-gradient(var(--c-blush), var(--c-cream)); border-radius: 8px; }
+.museum-frame { display: flex; flex-direction: column; align-items: center; border: 0; background: none; cursor: pointer; padding: 0; }
+.museum-frame img, .museum-blank { width: 170px; height: 200px; object-fit: cover; border: 12px solid var(--c-gold); outline: 2px solid rgba(74, 46, 53, .25); box-shadow: 0 8px 18px rgba(74, 46, 53, .25); background: var(--c-paper); }
+.museum-blank { display: grid; place-items: center; font-size: 1.4rem; padding: 10px; text-align: center; color: var(--c-roseDeep); }
+.museum-plaque { margin-top: 10px; background: #fffaf2; border: 1px solid var(--c-gold); padding: 4px 10px; display: flex; flex-direction: column; font-size: .85rem; max-width: 180px; }
+.museum-timeline { list-style: none; padding: 0; border-left: 3px solid var(--c-pink); margin-left: 10px; }
+.museum-timeline li { position: relative; padding-left: 20px; margin: 18px 0; }
+.museum-year { position: relative; left: -34px; background: var(--c-rose); color: #fff; padding: 3px 10px; border-radius: 99px; font-weight: 600; }
+.museum-detail img { max-width: 100%; max-height: 60vh; display: block; margin: 0 auto 10px; border: 10px solid var(--c-gold); }
+.scrapbook-shelf { display: flex; flex-wrap: wrap; gap: 26px; justify-content: center; margin: 20px 0; }
+.scrapbook-cover { width: 200px; height: 250px; border: 0; border-radius: 4px 12px 12px 4px; cursor: pointer; transform: rotate(var(--tilt)); box-shadow: inset 14px 0 0 rgba(0, 0, 0, .12), 4px 6px 14px rgba(74, 46, 53, .25); display: grid; place-items: center; }
+.scrapbook-label { background: #fffdf6; padding: 12px 16px; display: flex; flex-direction: column; border: 1px dashed var(--c-roseDeep); max-width: 80%; }
+.scrapbook-label .script { font-size: 1.5rem; }
+.scrapbook-tools, .scrapbook-pages { align-items: center; margin-bottom: 10px; }
+.export-stage { position: absolute; left: -10000px; top: 0; width: 1000px; pointer-events: none; }
+.letter-pile { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; margin-top: 18px; }
+.letter-card { border: 0; background: none; cursor: pointer; transform: rotate(var(--tilt)); display: flex; flex-direction: column; gap: 6px; align-items: center; }
+.letter-card .envelope { width: 100%; filter: drop-shadow(0 4px 8px rgba(74, 46, 53, .2)); }
+.desk { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+.desk-form { display: flex; flex-direction: column; gap: 8px; }
+.desk-preview { display: flex; flex-direction: column; gap: 16px; position: sticky; top: 12px; }
+.desk-preview svg { width: 100%; height: auto; filter: drop-shadow(0 6px 14px rgba(74, 46, 53, .2)); }
+.desk-share { border-top: 1px dashed var(--c-pink); padding-top: 8px; }
+.desk-share .input { max-width: 340px; }
+.letter-text p { overflow-wrap: anywhere; }
+.letter-view { display: flex; justify-content: center; }
+.envelope-button { border: 0; background: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 10px; width: min(640px, 100%); }
+.envelope-button svg, .letter-opened svg { width: 100%; height: auto; filter: drop-shadow(0 8px 20px rgba(74, 46, 53, .25)); }
+.letter-opened { width: min(640px, 100%); }
+@keyframes unfold { from { transform: translateY(30px) scaleY(.6); opacity: 0; } }
+[data-motion='on'] .letter-opened, [data-motion='lively'] .letter-opened { animation: unfold .7s ease-out; transform-origin: top; }
+@media (max-width: 860px) { .desk { grid-template-columns: 1fr; } .desk-preview { position: static; } }
+.poster, .sleeve, .shop-cover, .museum-frame, .scrapbook-cover, .letter-card, .envelope-button, .adopt-card, .pet-portrait, .tv-screen, .pressed-flower { font: inherit; color: inherit; }
+.sleeve-text, .shop-cover span { color: #fffaf4; }
+.shop-book { width: 170px; }
+.shop-cover { width: 170px; height: 240px; }
+.shop-card { margin: -34px -14px 0 26px; width: 170px; }
+.pressed-flower { width: 32px; height: 32px; padding: 0; border-radius: 50%; background: #fffdf6; box-shadow: 0 2px 6px rgba(0, 0, 0, .18); line-height: 32px; top: -10px; right: -12px; }

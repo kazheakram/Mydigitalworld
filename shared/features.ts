@@ -30,7 +30,7 @@ export interface FeatureReset {
 
 /** Registered features whose pages arrive in a later phase. Their menu links and cards stay out of
  *  sight until they're built, so nothing in the working app leads nowhere. Shrinks every phase. */
-export const NOT_YET_BUILT = new Set(['regions', 'cinema', 'recordstore', 'bookstore', 'rabbitmap', 'museum', 'scrapbook', 'letters', 'capsules', 'pearls', 'minigames']);
+export const NOT_YET_BUILT = new Set(['regions', 'rabbitmap', 'capsules', 'pearls', 'minigames']);
 
 export interface FeatureDef {
   id: string;
@@ -82,7 +82,7 @@ export const FEATURES: FeatureDef[] = [
   { id: 'bedroom', name: 'My bedroom', group: 'Creative Spaces', about: 'A private dollhouse room to decorate with furniture, wallpaper and your photographs.', defaultMode: 'on', routes: ['/dollhouse/bedroom'], nav: [{ label: 'Bedroom', to: '/dollhouse/bedroom', area: 'dollhouse' }], reset: { what: 'Empties the bedroom back to its starting furniture (your images stay in the media library).' } },
   { id: 'museum', name: 'The Memory Museum', group: 'Creative Spaces', about: 'Exhibitions and timelines of photographs and milestones — private unless you choose.', defaultMode: 'on', templates: ['museum'], reset: { kinds: ['memory'], what: 'Deletes every memory in your museums (the photos stay in the media library).' } },
   { id: 'scrapbook', name: 'Scrapbook studio', group: 'Creative Spaces', about: 'Arrange photos, papers, stickers, ribbons and words into pages.', defaultMode: 'on', routes: ['/dollhouse/scrapbook'], nav: [{ label: 'Scrapbook', to: '/dollhouse/scrapbook', area: 'dollhouse' }], reset: { kinds: ['scrapbook'], what: 'Deletes every scrapbook page.' } },
-  { id: 'letters', name: 'Letter-writing desk', group: 'Creative Spaces', about: 'Write letters on pretty stationery with stamps and wax seals; keep them private or share a link.', defaultMode: 'on', routes: ['/dollhouse/letters'], nav: [{ label: 'Letters', to: '/dollhouse/letters', area: 'dollhouse' }], reset: { kinds: ['letter'], what: 'Deletes every letter you have written (guestbook letters are untouched).' } },
+  { id: 'letters', name: 'Letter-writing desk', group: 'Creative Spaces', about: 'Write letters on pretty stationery with stamps and wax seals; keep them private or share a link.', defaultMode: 'on', routes: ['/dollhouse/letters', '/letter'], nav: [{ label: 'Letters', to: '/dollhouse/letters', area: 'dollhouse' }], reset: { kinds: ['letter'], what: 'Deletes every letter you have written (guestbook letters are untouched).' } },
   { id: 'capsules', name: 'Time capsules', group: 'Creative Spaces', about: 'Seal letters, photos and links for a future day. You can always open them early.', defaultMode: 'on', routes: ['/dollhouse/capsules'], nav: [{ label: 'Time Capsules', to: '/dollhouse/capsules', area: 'dollhouse' }], reset: { kinds: ['capsule'], what: 'Deletes every time capsule.' } },
 
   // ── Gamification ──
