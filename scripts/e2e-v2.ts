@@ -53,6 +53,7 @@ try {
   await o.waitForURL(/dollhouse/);
   step('owner signed in');
   const visitorCtx = await browser.newContext({ viewport: { width: 1440, height: 960 } });
+  { const d = new Date(); d.setHours(11, 0, 0, 0); await visitorCtx.clock.setFixedTime(d); } // steady daylight for screenshots
   const v = await visitorCtx.newPage(); watch(v, 'visitor');
 
   const sections: Record<string, () => Promise<void>> = (await import('./e2e-v2-sections')).sections({ o, v, BASE, browser, shot, enter, api, step, ownerCtx, visitorCtx });

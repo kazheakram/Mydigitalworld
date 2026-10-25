@@ -22,6 +22,11 @@ This guide is for you, the person who lives here. It doesn't assume you know how
 11. [Publish changes](#11-publish-changes)
 12. [Use it from your phone](#12-use-it-from-your-phone)
 13. [Private vs. public: how it works](#13-private-vs-public)
+14. [Ribbonmere 2.0: switching things on and off](#14-the-feature-manager)
+15. [How things look: appearance modes](#15-appearance-modes)
+16. [Companions](#16-companions)
+17. [My Bedroom](#17-my-bedroom)
+18. [Weather, light and little interactions](#18-weather-light-and-little-interactions)
 
 ---
 
@@ -216,6 +221,68 @@ On a phone, the map can be zoomed with **＋ / －** and scrolled with your fing
 This is enforced by the **server**, not by hiding things in the page. Private things are never sent to a visitor's browser at all. That holds even inside a public item: a public book's *private notes* are removed before it's sent. A whole private room hides everything inside it.
 
 Uploaded images are the one exception. To show on public pages, image files are served to anyone who has their (long, random, unguessable) address. Don't upload something you'd never want shared.
+
+
+## 14. The Feature Manager
+
+Everything new in Ribbonmere 2.0 is optional. Open **Atelier → Features**. Each feature has a card with three choices:
+
+| Choice | What happens | Your things |
+|---|---|---|
+| **On** | It's in the menus and on the map. | Kept |
+| **Hidden** | It still works if you go to its address, but it's out of the menus, the Dollhouse cards and the map. | Kept |
+| **Resting** | It's switched off. Its page shows a short note saying it's resting, and visitors don't see it at all. | Kept, untouched |
+
+- **Reset…** is separate and always asks first. You have to type `RESET`. It clears *only that feature's own things*, and the card says exactly what that means. For example, resetting Companions removes your pets and their map spots, while your books, letterbox, rooms and theme stay as they are. Download a backup first if you're unsure (Atelier → Backups).
+- **Restore every feature** puts everything back to *On*. It never resets or deletes anything.
+- **Visitors see your choices once you publish the village.** Use the *Publish changes for visitors* button at the top of the Feature Manager.
+- **Backups:** feature choices live in your village settings, so every backup and checkpoint includes them.
+
+## 15. Appearance modes
+
+The ☾ menu has four looks. They change how the site looks, never what's in it:
+
+- **Coquette:** the full storybook look.
+- **Quiet:** calm and readable. It has no animation, larger text, and no decorations, stamps, weather, companions or games. Every room and every piece of content is still there. Press **Alt + Q** anywhere to switch Quiet on or off.
+- **Pixie:** pixel-art edges, a pixel font and little sprites.
+- **Midnight:** deep plum, dusty rose and candlelight.
+
+Each person's choice is remembered on their own device. To choose which look visitors get first, go to *Atelier → Features → appearance visitors see first*.
+
+## 16. Companions
+
+*Dollhouse → ✿ more rooms → Pets* (or the **Companions** card).
+
+- **Adopt:** pick a white bunny, baby fawn, kitten or little swan, give them a name, and press *Bring them home*. You can have as many as you like.
+- **Dress up:** open *Accessories & colours* to change fur and collar colours, choose a bow, or add a pearl necklace, a flower crown or a lace bonnet. You can also choose their home: a cushion, hutch, basket or lily pond. Tap a companion to give them a pat.
+- **Follows me around:** one companion at a time walks along the bottom of your screen after your cursor. Only you see this. It's off in Quiet mode, and it stands still if you've turned animations off.
+- **Wanders the village map:** puts that companion on the public map. Visitors see it after you publish. The pet's record stays private; visitors only see the little picture and its name.
+- **Tucked away for now:** keeps them safe but out of sight.
+- **Rehome…:** says goodbye for good, after asking you first.
+- Companions never get hungry, sad or lost, and nothing happens if you don't visit.
+- **Hide / rest / reset:** use the *Pet companions* card in the Feature Manager. Resting takes them off the map and stops the follower, and they all come back exactly as they were. Reset removes the pets and their map spots only.
+
+## 17. My Bedroom
+
+*Dollhouse → ✿ more rooms → Bedroom* (or the **My Bedroom** card).
+
+1. Press **Make my bedroom**. You get a canopy bed, vanity, lamp, window, shelf, rug and a little bunny.
+2. Choose a **wallpaper** (candy stripes, climbing roses, gingham, pearl dots, starry night or plain), a **floor**, and optionally your own wall colour.
+3. Press **Arrange furniture & photos** to open the room editor. Drag pieces around, resize them and recolour them. The *Furniture* shelf has beds, wardrobes, vanities, dressers, lamps, a swan lamp, a music box, cushions, mirrors and pet homes.
+4. **Your photos:** drag an image from your media library into the room. Select it and choose a **Frame**: gilded, lace, polaroid or oval cameo. Frames work in any freeform room, not just the bedroom.
+
+The bedroom is **private**. Visitors can't open it, and it isn't sent to their browser. If you'd like to share it, change its visibility in *Atelier → Rooms*.
+**Reset** (in the Feature Manager) puts back the starting furniture and wallpaper. Your uploaded images stay in the media library.
+
+## 18. Weather, light and little interactions
+
+These live in *Atelier → Features → World & Atmosphere*:
+
+- **Weather:** by default it follows the season and stays the same all day. Winter brings snow, spring brings petals and rain, summer is sunny, and autumn is misty. You can pick one instead on the card.
+- **Day & night:** by default the village light follows each visitor's clock: golden mornings, dusky evenings, and night with stars and glowing windows. Or set it to always daytime, always golden hour, or always night.
+- **Little interactions:** tap the fountain for a splash, trees and rose bushes for falling petals, and lamp posts to switch them off and on. Tap a bunny, deer or swan for a hop and a heart.
+
+All three are switched off in Quiet mode. Resting them turns them off for everyone after you publish. Buildings and rooms always keep working. Visitors only ever receive the weather and light choice, never any other setting.
 
 ---
 

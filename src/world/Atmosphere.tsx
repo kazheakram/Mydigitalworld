@@ -58,7 +58,7 @@ const TINT: Record<Daypart, { fill: string; opacity: number } | null> = {
   day: null,
   golden: { fill: '#f6b26b', opacity: 0.2 },
   dusk: { fill: '#8a5a8f', opacity: 0.26 },
-  night: { fill: '#1d1838', opacity: 0.42 },
+  night: { fill: '#3b2a62', opacity: 0.38 },
 };
 
 /** Glowing spots (lamps, building windows) stay bright when the light dims. */
@@ -89,7 +89,12 @@ export function WeatherOverlay({ weather, width, height }: { weather: Weather; w
           {Array.from({ length: 7 }, (_, i) => <path key={i} d={`M${width * 0.9} -40 L${width * (0.25 + i * 0.09)} ${height} L${width * (0.29 + i * 0.09)} ${height} Z`} fill="#fff4c9" opacity={0.08} />)}
         </g>
       )}
-      {weather === 'mist' && [0.35, 0.55, 0.75].map((f, i) => <rect key={i} className="mist-band" x={-200} y={height * f} width={width + 400} height={90} rx={45} fill="#fffaf6" opacity={0.32} style={{ animationDelay: `${-i * 9}s` }} />)}
+      {weather === 'mist' && (
+        <>
+          <defs><filter id="rm-mist" x="-20%" y="-200%" width="140%" height="500%"><feGaussianBlur stdDeviation="28" /></filter></defs>
+          {[0.38, 0.6, 0.8].map((f, i) => <ellipse key={i} className="mist-band" cx={width / 2} cy={height * f} rx={width * 0.62} ry={46} fill="#fffaf6" opacity={0.42} filter="url(#rm-mist)" style={{ animationDelay: `${-i * 9}s` }} />)}
+        </>
+      )}
       {weather === 'rain' && (
         <>
           <rect width={width} height={height} fill="#7d8fa8" opacity={0.08} />

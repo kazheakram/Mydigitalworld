@@ -28,6 +28,10 @@ export interface FeatureReset {
   what: string;
 }
 
+/** Registered features whose pages arrive in a later phase. Their menu links and cards stay out of
+ *  sight until they're built, so nothing in the working app leads nowhere. Shrinks every phase. */
+export const NOT_YET_BUILT = new Set(['regions', 'newspaper', 'parlour', 'readingJournal', 'commonplace', 'cinema', 'recordstore', 'bookstore', 'rabbitmap', 'museum', 'scrapbook', 'letters', 'capsules', 'pearls', 'minigames']);
+
 export interface FeatureDef {
   id: string;
   name: string;

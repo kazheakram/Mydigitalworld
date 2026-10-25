@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { FeatureMode } from '../../shared/types';
-import { FEATURE_GROUPS, FEATURES, featureState, type FeatureDef } from '../../shared/features';
+import { FEATURE_GROUPS, FEATURES, NOT_YET_BUILT, featureState, type FeatureDef } from '../../shared/features';
 import { APPEARANCES } from '../../shared/appearance';
 import { useStore } from '../lib/store';
 import { setFeature } from '../lib/features';
@@ -84,7 +84,7 @@ export function FeatureManagerPage() {
                 const st = featureState(world, f.id);
                 return (
                   <article key={f.id} className={`fm-card mode-${st.mode}`} aria-label={f.name}>
-                    <header><strong>{f.name}</strong><span className={`fm-badge ${st.mode}`}>{MODES.find((m) => m.id === st.mode)!.label}</span></header>
+                    <header><strong>{f.name}</strong><span className={`fm-badge ${st.mode}`}>{MODES.find((m) => m.id === st.mode)!.label}</span>{NOT_YET_BUILT.has(f.id) && <span className="fm-soon">coming soon</span>}</header>
                     <p className="muted">{f.about}</p>
                     <div className="fm-modes" role="radiogroup" aria-label={`${f.name}: on, hidden or resting`}>
                       {MODES.map((m) => (
@@ -103,7 +103,7 @@ export function FeatureManagerPage() {
                       );
                     })()}
                     <div className="row wrap gap fm-links">
-                      {f.nav?.map((n) => <Link key={n.to} className="linkish" to={n.to}>open</Link>)}
+                      {!NOT_YET_BUILT.has(f.id) && f.nav?.map((n) => <Link key={n.to} className="linkish" to={n.to}>open</Link>)}
                       {f.reset && <button className="linkish danger-link" onClick={() => { setConfirming(f); setTyped(''); }}>reset…</button>}
                     </div>
                   </article>

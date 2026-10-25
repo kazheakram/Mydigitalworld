@@ -6,7 +6,7 @@ import { api, items as itemsApi } from '../lib/api';
 import { hostOf, timeAgo, uid } from '../lib/util';
 import { Polaroid, Tag, useAsync } from '../ui/kit';
 import { useItems } from '../rooms/common';
-import { FEATURE_BY_ID, featureMode } from '../../shared/features';
+import { FEATURE_BY_ID, NOT_YET_BUILT, featureMode } from '../../shared/features';
 import { ModeShell } from './Shell';
 import { Vignette } from './Vignette';
 import { QuickAdd } from './Letterbox';
@@ -68,7 +68,7 @@ export function DollhousePage() {
     setWidgets(list);
   };
   const patch = (id: string, p: Partial<DashboardWidget>) => setWidgets(widgets.map((w) => (w.id === id ? { ...w, ...p } : w)));
-  const cards = DOLLHOUSE_CARDS.filter((c) => !c.feature || featureMode(world, c.feature) === 'on')
+  const cards = DOLLHOUSE_CARDS.filter((c) => !c.feature || (featureMode(world, c.feature) === 'on' && !NOT_YET_BUILT.has(c.feature)))
     .filter((c) => !(appearance === 'quiet' && c.feature && FEATURE_BY_ID.get(c.feature)?.quietHides));
   return (
     <ModeShell mode="private">

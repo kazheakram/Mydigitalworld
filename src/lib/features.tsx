@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import type { FeatureMode, WorldConfig } from '../../shared/types';
-import { FEATURE_BY_ID, FEATURES, featureForPath, featureForTemplate, featureMode, featureState } from '../../shared/features';
+import { FEATURE_BY_ID, FEATURES, NOT_YET_BUILT, featureForPath, featureForTemplate, featureMode, featureState } from '../../shared/features';
 import { useStore } from './store';
 
 // Reading and changing feature modes from anywhere in the app.
@@ -38,7 +38,7 @@ export function roomFeatureMode(world: WorldConfig, template: string): FeatureMo
 /** Menu entries contributed by features that are on. */
 export function useFeatureNav(area: 'dollhouse' | 'stargirl' | 'village' | 'atelier') {
   const { world, appearance } = useStore();
-  return FEATURES.filter((f) => featureMode(world, f.id) === 'on' && !(appearance === 'quiet' && f.quietHides))
+  return FEATURES.filter((f) => featureMode(world, f.id) === 'on' && !NOT_YET_BUILT.has(f.id) && !(appearance === 'quiet' && f.quietHides))
     .flatMap((f) => (f.nav ?? []).filter((n) => n.area === area));
 }
 
