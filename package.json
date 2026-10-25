@@ -22,7 +22,8 @@
     "test:functions": "tsx --test tests/tokens.test.ts tests/functions.test.ts",
     "export:sqlite": "tsx scripts/export-sqlite.ts",
     "test:cloud": "tsx scripts/e2e-cloud.ts",
-    "dev:cloud": "tsx scripts/dev-cloud.ts"
+    "dev:cloud": "tsx scripts/dev-cloud.ts",
+    "test:v2": "tsx scripts/e2e-v2.ts"
   },
   "dependencies": {
     "@fontsource/cormorant-garamond": "5.1.0",

@@ -1,4 +1,7 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
+import { Resting, roomFeatureMode } from '../lib/features';
+import { featureForTemplate } from '../../shared/features';
+import { award, noteVisit } from '../lib/progress';
 import { Link, useParams } from 'react-router-dom';
 import type { Room } from '../../shared/types';
 import { useStore } from '../lib/store';
@@ -21,6 +24,13 @@ export function RoomPage() {
   const { world, theme, owner, updateWorld } = useStore();
   const room = world.rooms.find((r) => r.id === roomId);
   const [editingRoom, setEditingRoom] = useState(false);
+  useEffect(() => {
+    // Optional little celebrations for wandering (never a checklist).
+    if (!room) return;
+    if (room.template === 'secret') award('secret-garden');
+    if (room.template === 'region') award('beyond');
+    noteVisit(room.id).then((n) => { if (n >= 6) award('wanderer'); });
+  }, [room?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!room) {
     return (
@@ -28,6 +38,10 @@ export function RoomPage() {
         <main className="page-main narrow"><Empty title="This door is locked">There is no room here — or it's private. <Link to="/">Back to the village</Link></Empty></main>
       </div>
     );
+  }
+  if (roomFeatureMode(world, room.template) === 'off') {
+    const f = featureForTemplate(room.template)!;
+    return <Resting name={f.name} owner={owner} />;
   }
   const Tpl = TEMPLATES[room.template] ?? FreeformRoom;
   const style = { ...themeVars(theme.active, { ...(theme.active.locations?.[room.id] ?? {}), ...(room.theme ?? {}) }) } as React.CSSProperties;

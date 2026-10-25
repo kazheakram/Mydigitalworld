@@ -6,6 +6,7 @@ import { api, items as itemsApi } from '../lib/api';
 import { hostOf, timeAgo, uid } from '../lib/util';
 import { Polaroid, Tag, useAsync } from '../ui/kit';
 import { useItems } from '../rooms/common';
+import { FEATURE_BY_ID, featureMode } from '../../shared/features';
 import { ModeShell } from './Shell';
 import { Vignette } from './Vignette';
 import { QuickAdd } from './Letterbox';
@@ -14,6 +15,28 @@ import type { Entry } from './Conservatory';
 
 // Dollhouse Mode home: the private sanctuary. Polaroid doors to each section, then the
 // customisable widget dashboard — drag to rearrange, resize, hide, or add from the library.
+
+/** The polaroid doors on the Dollhouse home. Optional ones follow their feature's on/hidden/off. */
+export const DOLLHOUSE_CARDS: { title: string; caption: string; to: string; v: string; feature?: string }[] = [
+  { title: 'Inbox', caption: 'messages · replies · notes', to: '/dollhouse/inbox', v: 'inbox', feature: 'letterbox' },
+  { title: 'Reading Room', caption: 'books · essays · articles', to: '/dollhouse/reading', v: 'reading' },
+  { title: 'Diary', caption: 'personal notes · daydreams', to: '/dollhouse/diary', v: 'diary' },
+  { title: 'Bookmarks', caption: 'saved links · places · ideas', to: '/dollhouse/bookmarks', v: 'bookmarks', feature: 'cabinet' },
+  { title: 'Favorites', caption: 'creators I love', to: '/dollhouse/favorites', v: 'favorites', feature: 'reader' },
+  { title: 'Theme Closet', caption: 'themes · wallpapers · extras', to: '/atelier/theme', v: 'closet' },
+  { title: 'My Bedroom', caption: 'a dollhouse room to decorate', to: '/dollhouse/bedroom', v: 'bedroom', feature: 'bedroom' },
+  { title: 'Companions', caption: 'bunnies · fawns · kittens · swans', to: '/dollhouse/pets', v: 'pets', feature: 'pets' },
+  { title: 'Morning Paper', caption: 'today’s edition', to: '/dollhouse/newspaper', v: 'newspaper', feature: 'newspaper' },
+  { title: 'Video Parlour', caption: 'channels · saved videos', to: '/dollhouse/parlour', v: 'parlour', feature: 'parlour' },
+  { title: 'Reading Journal', caption: 'history · wrap-ups', to: '/dollhouse/reading-journal', v: 'journal', feature: 'readingJournal' },
+  { title: 'Scrapbook', caption: 'pages of little things', to: '/dollhouse/scrapbook', v: 'scrapbook', feature: 'scrapbook' },
+  { title: 'Letters', caption: 'stationery · seals', to: '/dollhouse/letters', v: 'letters', feature: 'letters' },
+  { title: 'Time Capsules', caption: 'for a future day', to: '/dollhouse/capsules', v: 'capsules', feature: 'capsules' },
+  { title: 'Charms', caption: 'pearls · achievements', to: '/dollhouse/charms', v: 'charms', feature: 'pearls' },
+];
+const WIDGET_FEATURE: Record<string, string> = {
+  inbox: 'letterbox', 'quick-add': 'letterbox', feeds: 'reader', 'watch-later': 'cabinet', favorites: 'cabinet', discoveries: 'stargirl', expeditions: 'stargirl',
+};
 
 export const WIDGET_LIBRARY: { type: string; title: string; about: string }[] = [
   { type: 'current-reads', title: 'On my nightstand', about: 'Books on your currently-reading shelf' },
@@ -31,8 +54,9 @@ export const WIDGET_LIBRARY: { type: string; title: string; about: string }[] = 
 ];
 
 export function DollhousePage() {
-  const { world, updateWorld } = useStore();
+  const { world, updateWorld, appearance } = useStore();
   const nav = useNavigate();
+  const widgetOn = (type: string) => { const f = WIDGET_FEATURE[type]; return !f || featureMode(world, f) === 'on'; };
   const copy = world.modes.private;
   const [editing, setEditing] = useState(false);
   const [drag, setDrag] = useState<string | null>(null);
@@ -44,18 +68,12 @@ export function DollhousePage() {
     setWidgets(list);
   };
   const patch = (id: string, p: Partial<DashboardWidget>) => setWidgets(widgets.map((w) => (w.id === id ? { ...w, ...p } : w)));
-  const cards = [
-    { title: 'Inbox', caption: 'messages · replies · notes', to: '/dollhouse/inbox', v: 'inbox' },
-    { title: 'Reading Room', caption: 'books · essays · articles', to: '/dollhouse/reading', v: 'reading' },
-    { title: 'Diary', caption: 'personal notes · daydreams', to: '/dollhouse/diary', v: 'diary' },
-    { title: 'Bookmarks', caption: 'saved links · places · ideas', to: '/dollhouse/bookmarks', v: 'bookmarks' },
-    { title: 'Favorites', caption: 'creators I love', to: '/dollhouse/favorites', v: 'favorites' },
-    { title: 'Theme Closet', caption: 'themes · wallpapers · extras', to: '/atelier/theme', v: 'closet' },
-  ];
+  const cards = DOLLHOUSE_CARDS.filter((c) => !c.feature || featureMode(world, c.feature) === 'on')
+    .filter((c) => !(appearance === 'quiet' && c.feature && FEATURE_BY_ID.get(c.feature)?.quietHides));
   return (
     <ModeShell mode="private">
       <div className="collage-hero">
-        <div className="collage-side left hide-narrow">
+        <div className="collage-side left hide-narrow decor-only">
           {copy.notes[1] && <Tag tilt={-6}>{copy.notes[1]}</Tag>}
           {copy.notes[2] && <Tag tilt={4}>{copy.notes[2]}</Tag>}
         </div>
@@ -63,9 +81,9 @@ export function DollhousePage() {
           <p className="smallcaps">welcome to</p>
           <h2 className="script">{copy.title}</h2>
           <p className="smallcaps soft">“a personal space for quieter days, gentler thoughts, and things I love.”</p>
-          <QuickAdd compact />
+          {featureMode(world, 'letterbox') === 'on' && <QuickAdd compact />}
         </div>
-        <div className="collage-side right hide-narrow">
+        <div className="collage-side right hide-narrow decor-only">
           {copy.notes[3] && <Tag tilt={5}>{copy.notes[3]}</Tag>}
           <Link to="/" className="paper-tag link-tag" style={{ ['--tilt' as any]: '-3deg' }}><span className="hand">back out to the village ↩</span></Link>
         </div>
@@ -88,7 +106,7 @@ export function DollhousePage() {
         </div>
       )}
       <div className="dashboard">
-        {widgets.filter((w) => editing || !w.hidden).map((w, i) => (
+        {widgets.filter((w) => (editing || !w.hidden) && widgetOn(w.type)).map((w, i) => (
           <div key={w.id} className={`widget size-${w.size} ${w.hidden ? 'is-hidden' : ''} ${editing ? 'editing' : ''}`}
             draggable={editing} onDragStart={() => setDrag(w.id)} onDragOver={(e) => editing && e.preventDefault()} onDrop={() => { if (drag && drag !== w.id) move(drag, i); setDrag(null); }}>
             <div className="widget-frame">

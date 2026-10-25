@@ -1,4 +1,5 @@
 import { ITEM_KINDS, type Item, type ItemKind, type Visibility, type WorldConfig } from './types';
+import { featureForTemplate, featureMode, publicFeatures } from './features';
 
 // Rules shared by every backend (the Node server and the Firebase/Cloudflare version),
 // so privacy filtering and validation behave identically everywhere.
@@ -9,7 +10,9 @@ export const MEDIA_URL_RE = /^(https?:\/\/|\/uploads\/|\/media\/)/i;
 
 /** What visitors receive: no private rooms, no owner-only or hidden objects, nothing from unrevealed regions. */
 export function publicWorld(w: WorldConfig): WorldConfig {
-  const rooms = w.rooms.filter((r) => r.visibility !== 'private');
+  // Rooms belonging to a switched-off feature rest quietly, as if they weren't there.
+  const resting = (t: string) => { const f = featureForTemplate(t); return !!f && featureMode(w, f.id) === 'off'; };
+  const rooms = w.rooms.filter((r) => r.visibility !== 'private' && !resting(r.template));
   const roomIds = new Set(rooms.map((r) => r.id));
   const hiddenRegions = new Set(w.regions.filter((r) => !r.revealed).map((r) => r.id));
   const objects = w.objects.filter((o) => !o.ownerOnly && !o.hidden && !(o.regionId && hiddenRegions.has(o.regionId)) && (!o.roomId || roomIds.has(o.roomId)));
@@ -19,6 +22,7 @@ export function publicWorld(w: WorldConfig): WorldConfig {
     rooms: rooms.map((r) => ({ ...r, scene: r.scene?.filter((o) => !o.hidden && !o.ownerOnly) })),
     regions: w.regions.map((r) => (r.revealed ? r : { ...r, name: r.name })),
     trash: [], dashboard: [], inbox: { cooldownHours: 0 },
+    features: publicFeatures(w.features),
   };
 }
 export const publicTheme = (t: any) => ({ active: t.active, custom: [] });

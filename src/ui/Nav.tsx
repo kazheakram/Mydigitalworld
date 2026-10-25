@@ -6,10 +6,15 @@ import { Icon } from './Icon';
 import { BowIcon } from './kit';
 import { SyncBadge } from './SyncBadge';
 import { IS_FIREBASE } from '../lib/backend/config';
+import { useFeature, useFeatureNav } from '../lib/features';
+import { APPEARANCES } from '../../shared/appearance';
 
 /** The lace-edged navigation card that floats in the top-right of every page. */
 export function TopNav({ variant = 'village' }: { variant?: 'village' | 'dollhouse' | 'stargirl' | 'atelier' }) {
-  const { owner, preview, setPreview, world, motionOff, setMotionOff, soundOn, setSoundOn, refresh, toast } = useStore();
+  const { owner, preview, setPreview, world, motionOff, setMotionOff, soundOn, setSoundOn, refresh, toast, appearance, setAppearance } = useStore();
+  const stargirl = useFeature('stargirl');
+  const switcher = useFeature('appearanceSwitch');
+  const villageNav = useFeatureNav('village');
   const nav = useNavigate();
   const [comfort, setComfort] = useState(false);
   const post = world.rooms.find((r) => r.template === 'postoffice' && r.visibility !== 'private');
@@ -20,15 +25,24 @@ export function TopNav({ variant = 'village' }: { variant?: 'village' | 'dollhou
       <NavLink to="/places"><Icon name="map" /><span>Places</span></NavLink>
       {welcome && <NavLink to={`/room/${welcome.id}`}><Icon name="heart" /><span>About</span></NavLink>}
       {post && <NavLink to={`/room/${post.id}`}><Icon name="envelope" /><span>Guestbook</span></NavLink>}
+      {appearance !== 'quiet' && villageNav.map((n) => <NavLink key={n.to} to={n.to}><Icon name="compass" /><span>{n.label}</span></NavLink>)}
       <NavLink to="/search"><Icon name="search" /><span>Search</span></NavLink>
       {owner && <NavLink to="/dollhouse" className="mode-link"><BowIcon size={20} /><span>Dollhouse</span></NavLink>}
-      {owner && <NavLink to="/stargirl"><Icon name="moon" /><span>Stargirl</span></NavLink>}
+      {owner && stargirl.shown && <NavLink to="/stargirl"><Icon name="moon" /><span>Stargirl</span></NavLink>}
       {owner && <NavLink to="/atelier"><Icon name="gear" /><span>Atelier</span></NavLink>}
       {owner && <SyncBadge />}
       <div className="comfort">
         <button className="icon-btn" aria-expanded={comfort} aria-label="Comfort settings: motion and sound" onClick={() => setComfort(!comfort)}>☾</button>
         {comfort && (
           <div className="comfort-pop lace-card" role="dialog" aria-label="Comfort settings">
+            {(switcher.available || owner) && (
+              <div className="appearance-pick" role="radiogroup" aria-label="Appearance">
+                <span className="smallcaps">appearance</span>
+                {APPEARANCES.map((a) => (
+                  <button key={a.id} role="radio" aria-checked={appearance === a.id} className={`chip ${appearance === a.id ? 'on' : ''}`} title={a.about} onClick={() => setAppearance(a.id)}>{a.name}</button>
+                ))}
+              </div>
+            )}
             <label className="check"><input type="checkbox" checked={!motionOff} onChange={(e) => setMotionOff(!e.target.checked)} /> Gentle animations</label>
             <label className="check"><input type="checkbox" checked={soundOn} onChange={(e) => setSoundOn(e.target.checked)} /> Little chimes</label>
             {(owner || preview) && (

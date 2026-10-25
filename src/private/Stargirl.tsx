@@ -11,6 +11,7 @@ import { Vignette } from './Vignette';
 import { quickSave } from './inboxLogic';
 import type { Entry } from './Conservatory';
 import { BookmarkCard } from './Cabinet';
+import { liveFeatureOn } from '../lib/liveWorld';
 
 // Stargirl Mode: intentional exploration. Expeditions have a purpose, an optional timer and an end —
 // no infinite feed, no streaks, nothing designed to keep you scrolling.
@@ -90,7 +91,7 @@ export function RabbitHolesPage() {
     e?.preventDefault();
     if (!active || (!disc.url && !disc.note)) return;
     const d: Discovery = { id: uid('d-'), url: isUrl(disc.url) ? disc.url : undefined, note: disc.note || (!isUrl(disc.url) ? disc.url : ''), savedAt: new Date().toISOString() };
-    if (d.url) { try { const m = await api('POST', '/api/unfurl', { url: d.url }); d.title = m.title; } catch { /* keep the bare link */ } }
+    if (d.url && liveFeatureOn('linkPreviews')) { try { const m = await api('POST', '/api/unfurl', { url: d.url }); d.title = m.title; } catch { /* keep the bare link */ } }
     await save({ discoveries: [...active.data.discoveries, d] });
     setDisc({ url: '', note: '' });
     toast('Pocketed ✧');

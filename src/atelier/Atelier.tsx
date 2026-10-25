@@ -15,6 +15,7 @@ import { SceneEditor, useHistory } from './SceneEditor';
 const TABS = [
   { to: '/atelier', label: 'Village map', end: true },
   { to: '/atelier/theme', label: 'Theme closet' },
+  { to: '/atelier/features', label: 'Features' },
   { to: '/atelier/rooms', label: 'Rooms' },
   { to: '/atelier/media', label: 'Media & decorations' },
   { to: '/atelier/village', label: 'Village settings' },

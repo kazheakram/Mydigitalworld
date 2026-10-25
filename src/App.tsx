@@ -1,4 +1,9 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
+import { FeatureGate } from './lib/features';
+import { featureMode } from '../shared/features';
+import { setProgressContext } from './lib/progress';
+import { setLiveWorld } from './lib/liveWorld';
+import { PixieSprites, PixelateFilter } from './ui/PixieSprites';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { StoreProvider, useStore } from './lib/store';
 import { Loading, Toasts } from './ui/kit';
@@ -27,7 +32,23 @@ const ThemeClosetPage = lazy(() => import('./atelier/Studio').then((m) => ({ def
 const RoomsManagerPage = lazy(() => import('./atelier/Studio').then((m) => ({ default: m.RoomsManagerPage })));
 const MediaLibraryPage = lazy(() => import('./atelier/Studio').then((m) => ({ default: m.MediaLibraryPage })));
 const VillageSettingsPage = lazy(() => import('./atelier/Studio').then((m) => ({ default: m.VillageSettingsPage })));
+const FeatureManagerPage = lazy(() => import('./atelier/FeatureManager').then((m) => ({ default: m.FeatureManagerPage })));
 const BackupsPage = lazy(() => import('./atelier/Studio').then((m) => ({ default: m.BackupsPage })));
+
+/** Connects the optional progress system to who is looking and which features are on; Alt+Q toggles Quiet. */
+function ProgressBridge() {
+  const { owner, world, toast, appearance, setAppearance } = useStore();
+  const achievementsOn = featureMode(world, 'achievements') !== 'off' && appearance !== 'quiet';
+  const pearlsOn = featureMode(world, 'pearls') !== 'off';
+  setLiveWorld(world);
+  useEffect(() => { setProgressContext({ owner, achievementsOn, pearlsOn, celebrate: (m) => toast(`✨ ${m}`, { essential: false }) }); }, [owner, achievementsOn, pearlsOn, toast]);
+  useEffect(() => {
+    const key = (e: KeyboardEvent) => { if (e.altKey && (e.key === 'q' || e.key === 'Q' || e.code === 'KeyQ')) { e.preventDefault(); setAppearance(appearance === 'quiet' ? null : 'quiet'); } };
+    window.addEventListener('keydown', key);
+    return () => window.removeEventListener('keydown', key);
+  }, [appearance, setAppearance]);
+  return null;
+}
 
 function Shell() {
   const { ready, offline } = useStore();
@@ -60,7 +81,11 @@ function Shell() {
       <a className="skip-link" href="#main">Skip to content</a>
       <PreviewBanner />
       <SeasonLayer />
+      <ProgressBridge />
+      <PixieSprites />
+      <PixelateFilter />
       <Suspense fallback={<Loading />}>
+        <FeatureGate>
         <Routes>
           <Route path="/" element={<WorldPage />} />
           <Route path="/places" element={<PlacesPage />} />
@@ -87,8 +112,10 @@ function Shell() {
           <Route path="/atelier/media" element={<MediaLibraryPage />} />
           <Route path="/atelier/village" element={<VillageSettingsPage />} />
           <Route path="/atelier/backup" element={<BackupsPage />} />
+          <Route path="/atelier/features" element={<FeatureManagerPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
+        </FeatureGate>
       </Suspense>
       <Toasts />
     </>

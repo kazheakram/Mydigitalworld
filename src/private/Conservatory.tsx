@@ -7,6 +7,8 @@ import { Empty, ErrorNote, Field, Loading, Modal, useAsync } from '../ui/kit';
 import { ModeShell, SectionTitle } from './Shell';
 import { quickSave } from './inboxLogic';
 import { downloadOpml } from '../lib/backup';
+import { useFeature } from '../lib/features';
+import { isYoutubeFeed } from '../lib/liveWorld';
 
 // The Glass Conservatory: an RSS/Atom reader. Chronological, never algorithmic.
 
@@ -30,7 +32,9 @@ export function ConservatoryPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [lastRefresh, setLastRefresh] = useState<string | null>(null);
   const [manage, setManage] = useState<FeedRow | null>(null);
-  const list = feeds.data ?? [];
+  const ytOn = useFeature('youtubeFeeds').available;
+  const list = (feeds.data ?? []).filter((f) => ytOn || !isYoutubeFeed(f.url));
+  const visibleEntries = (entries.data ?? []).filter((e) => list.some((f) => f.id === e.feedId));
   const cats = [...new Set([...list.map((f) => f.category)])];
   const lastFetched = list.map((f) => f.lastFetched).filter(Boolean).sort().pop();
 
@@ -100,7 +104,7 @@ export function ConservatoryPage() {
           )}
           {!entries.loading && list.length > 0 && (entries.data?.length ?? 0) === 0 && <Empty title={filter === 'unread' ? 'All caught up ♡' : 'Nothing here yet'} art="☕" />}
           <ol className="entries">
-            {(entries.data ?? []).map((e) => (
+            {visibleEntries.map((e) => (
               <li key={e.id} className={`entry-card ${e.read ? 'read' : ''}`}>
                 {e.image && <img src={e.image} alt="" loading="lazy" referrerPolicy="no-referrer" />}
                 <div>

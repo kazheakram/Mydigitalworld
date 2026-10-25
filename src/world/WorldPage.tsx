@@ -8,6 +8,9 @@ import { TopNav } from '../ui/Nav';
 import { Icon, TEMPLATE_ICON } from '../ui/Icon';
 import { BowIcon, Modal, Tag } from '../ui/kit';
 import { addStamp, getStamps, STAMP_NAMES } from '../lib/stamps';
+import { featureMode } from '../../shared/features';
+import { roomFeatureMode } from '../lib/features';
+import { award } from '../lib/progress';
 
 // Rosegarden Mode — the public village. The illustrated map is the navigation.
 
@@ -38,10 +41,12 @@ export function Intro({ onDone }: { onDone: () => void }) {
 }
 
 export function WorldPage() {
-  const { world, owner, soundOn, toast } = useStore();
+  const { world, owner, soundOn, toast, appearance } = useStore();
   const nav = useNavigate();
   const narrow = useIsNarrow();
-  const [intro, setIntro] = useState(() => { try { return world.introEnabled && !sessionStorage.getItem('rm-entered'); } catch { return world.introEnabled; } });
+  const introOn = world.introEnabled && featureMode(world, 'intro') === 'on' && appearance !== 'quiet';
+  const stampsOn = featureMode(world, 'stamps') === 'on' && appearance !== 'quiet';
+  const [intro, setIntro] = useState(() => { try { return introOn && !sessionStorage.getItem('rm-entered'); } catch { return introOn; } });
   const [zoom, setZoom] = useState(narrow ? 1.9 : 1);
   const [secret, setSecret] = useState<{ title: string; message: string; stamp?: string; fresh?: boolean } | null>(null);
   const [region, setRegion] = useState<Region | null>(null);
@@ -59,13 +64,21 @@ export function WorldPage() {
   }, [zoom]);
 
   const roomsById = useMemo(() => new Map(world.rooms.map((r) => [r.id, r])), [world.rooms]);
-  const places = world.rooms.filter((r) => r.visibility !== 'unlisted' && (owner || r.visibility === 'public'));
-  const objects = world.objects.filter((o) => owner || !o.ownerOnly);
+  const places = world.rooms.filter((r) => r.visibility !== 'unlisted' && (owner || r.visibility === 'public') && roomFeatureMode(world, r.template) === 'on');
+  // Buildings of hidden or resting features step off the map (their data is untouched);
+  // with easter eggs switched off, curious objects become plain decorations.
+  const objects = world.objects
+    .filter((o) => (owner || !o.ownerOnly) && (!o.roomId || !roomsById.has(o.roomId) || roomFeatureMode(world, roomsById.get(o.roomId)!.template) === 'on'))
+    .map((o) => (o.secret && !stampsOn ? { ...o, secret: undefined } : o));
 
   const activate = (o: SceneObject) => {
     if (o.secret) {
       const fresh = o.secret.stamp ? addStamp(o.secret.stamp) : false;
-      if (fresh) { setStamps(getStamps()); chime(soundOn, [880, 1175, 1568]); }
+      if (fresh) {
+        setStamps(getStamps()); chime(soundOn, [880, 1175, 1568]);
+        award('curious');
+        if (getStamps().length >= 5) award('stamp-collector');
+      }
       if (o.secret.roomId && roomsById.has(o.secret.roomId)) {
         if (fresh) toast(`You found a stamp: ${STAMP_NAMES[o.secret.stamp!] ?? o.secret.stamp} ✧`);
         nav(`/room/${o.secret.roomId}`);
@@ -82,10 +95,10 @@ export function WorldPage() {
 
   return (
     <div className="world-page mode-rosegarden">
-      {intro && <Intro onDone={() => { setIntro(false); try { sessionStorage.setItem('rm-entered', '1'); } catch { /* ignore */ } }} />}
+      {intro && <Intro onDone={() => { setIntro(false); award('first-steps'); try { sessionStorage.setItem('rm-entered', '1'); } catch { /* ignore */ } }} />}
 
       <header className="world-header">
-        <div className="header-note hide-narrow">{mode.notes[0] && <Tag tilt={-4}>{mode.notes[0]}</Tag>}</div>
+        <div className="header-note hide-narrow decor-only">{mode.notes[0] && <Tag tilt={-4}>{mode.notes[0]}</Tag>}</div>
         <div className="cartouche lace-card">
           <BowIcon size={54} className="cartouche-bow" />
           <h1 className="script">{mode.title}</h1>
@@ -93,7 +106,7 @@ export function WorldPage() {
         </div>
         <div className="header-right">
           <TopNav />
-          {mode.notes[1] && <span className="hide-narrow"><Tag tilt={4}>{mode.notes[1]}</Tag></span>}
+          {mode.notes[1] && <span className="hide-narrow decor-only"><Tag tilt={4}>{mode.notes[1]}</Tag></span>}
         </div>
       </header>
 
@@ -131,7 +144,7 @@ export function WorldPage() {
           <button className="icon-btn" onClick={() => setZoom((z) => Math.min(3, z + 0.4))} aria-label="Zoom in">＋</button>
           <button className="icon-btn" onClick={() => setZoom((z) => Math.max(1, z - 0.4))} aria-label="Zoom out">－</button>
         </div>
-        {stamps.length > 0 && (
+        {stampsOn && stamps.length > 0 && (
           <div className="stamp-book lace-card" aria-label={`You have found ${stamps.length} stamps`}>
             <span className="smallcaps">stamps found</span>
             <div>{stamps.map((s) => <span key={s} className="stamp-chip" title={STAMP_NAMES[s] ?? s}>✉</span>)}</div>
@@ -164,7 +177,7 @@ export function WorldPage() {
 /** An accessible, plain list of every place — the keyboard- and screen-reader-friendly path. */
 export function PlacesPage() {
   const { world, owner } = useStore();
-  const places = world.rooms.filter((r) => r.visibility !== 'unlisted' || owner);
+  const places = world.rooms.filter((r) => (r.visibility !== 'unlisted' || owner) && roomFeatureMode(world, r.template) === 'on');
   return (
     <div className="page">
       <header className="page-header"><TopNav /></header>
