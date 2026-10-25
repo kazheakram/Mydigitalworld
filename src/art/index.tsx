@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
 import * as B from './buildings';
 import * as D from './decor';
+import * as I from './interior';
+import * as P from './pets';
 import type { ArtColors } from './palette';
 
 // The artwork registry. A building or decoration on any scene refers to one of these keys,
@@ -30,6 +32,9 @@ export const ART: Record<string, ArtDef> = {
   observatory: bld('Observatory', B.Observatory),
   well: bld('Wishing well', B.Well),
   'manor-door': bld('Ribbon-curtained door', B.ManorDoor),
+  picturehouse: bld('Picture house', B.PictureHouse),
+  shopfront: bld('Little shopfront', B.Shopfront),
+  museum: bld('Memory museum', B.Museum),
   fountain: { ...bld('Rose fountain', B.Fountain), category: 'Garden & Outdoor', slots: [] },
   'tree-round': dec('Round tree', 'Trees & Plants', D.TreeRound, ['leaf']),
   'tree-blossom': dec('Blossom tree', 'Trees & Plants', D.TreeBlossom, ['blossom']),
@@ -65,6 +70,27 @@ export const ART: Record<string, ArtDef> = {
   star: dec('Star', 'Sky', D.Star),
   moon: dec('Crescent moon', 'Sky', D.Moon),
   cloud: dec('Cloud', 'Sky', D.Cloud),
+  // Ribbonmere 2.0: companions, pet homes and bedroom furniture
+  'pet-bunny': dec('Companion bunny', 'Creatures', P.PetBunny, ['fur', 'bow', 'collar']),
+  'pet-fawn': dec('Companion fawn', 'Creatures', P.PetFawn, ['fur', 'bow', 'collar']),
+  'pet-kitten': dec('Companion kitten', 'Creatures', P.PetKitten, ['fur', 'bow', 'collar']),
+  'pet-swan': dec('Companion swan', 'Creatures', P.PetSwan, ['fur', 'bow', 'collar']),
+  'home-cushion': dec('Pet cushion', 'Furniture', () => <P.PetHome kind="cushion" />),
+  'home-hutch': dec('Bunny hutch', 'Furniture', () => <P.PetHome kind="hutch" />),
+  'home-basket': dec('Wicker basket', 'Furniture', () => <P.PetHome kind="basket" />),
+  'home-pond': dec('Lily pond', 'Garden & Outdoor', () => <P.PetHome kind="pond" />),
+  bed: dec('Canopy bed', 'Furniture', I.CanopyBed, ['wood', 'fabric']),
+  wardrobe: dec('Wardrobe', 'Furniture', I.Wardrobe, ['wood']),
+  vanity: dec('Vanity', 'Furniture', I.Vanity, ['wood', 'fabric']),
+  nightstand: dec('Nightstand', 'Furniture', I.Nightstand, ['wood']),
+  floorlamp: dec('Floor lamp', 'Furniture', I.FloorLamp, ['shade']),
+  window: dec('Curtained window', 'Furniture', I.BedroomWindow),
+  wallshelf: dec('Wall shelf', 'Furniture', I.WallShelf, ['wood']),
+  dresser: dec('Dresser', 'Furniture', I.Dresser, ['wood']),
+  cushion: dec('Cushion', 'Furniture', I.Cushion, ['fabric']),
+  swanlamp: dec('Swan lamp', 'Furniture', I.SwanLamp),
+  musicbox: dec('Music box', 'Bows & Trinkets', I.MusicBox),
+  frame: dec('Picture frame', 'Furniture', I.PictureFrame),
 };
 
 export function ArtSvg({ art, colors, className, title }: { art: string; colors?: ArtColors; className?: string; title?: string }) {

@@ -22,10 +22,15 @@ export interface SceneProps {
   svgRef?: React.Ref<SVGSVGElement>;
   ariaLabel: string;
   showLabels?: 'hover' | 'always';
+  /** Decorations that respond to a tap (fountain splashes, petals, lamps…). */
+  isPlayful?: (o: SceneObject) => boolean;
+  /** Extra classes per object (e.g. a lamp switched off). */
+  classFor?: (o: SceneObject) => string | undefined;
 }
 
 export const ObjectArt = memo(function ObjectArt({ o }: { o: SceneObject }) {
   if (o.type === 'image' && o.src) {
+    if (o.frame) return <FramedImage o={o} />;
     return <image href={o.src} width={o.w} height={o.h} preserveAspectRatio="xMidYMid meet" />;
   }
   if (o.type === 'text') {
@@ -54,6 +59,26 @@ export const ObjectArt = memo(function ObjectArt({ o }: { o: SceneObject }) {
     </svg>
   );
 });
+
+/** A photo hung in a frame: gilded, lace, polaroid or a little oval cameo. */
+function FramedImage({ o }: { o: SceneObject }) {
+  const { w, h } = o; const f = o.frame!;
+  const pad = f === 'polaroid' ? Math.min(w, h) * 0.07 : Math.min(w, h) * 0.09;
+  const bottom = f === 'polaroid' ? pad * 3 : pad;
+  const clip = `fr-${o.id}`;
+  const iw = w - pad * 2; const ih = h - pad - bottom;
+  return (
+    <g className={`framed frame-${f}`}>
+      <defs><clipPath id={clip}>{f === 'oval' ? <ellipse cx={w / 2} cy={pad + ih / 2} rx={iw / 2} ry={ih / 2} /> : <rect x={pad} y={pad} width={iw} height={ih} />}</clipPath></defs>
+      {f === 'oval'
+        ? <ellipse cx={w / 2} cy={h / 2} rx={w / 2} ry={h / 2} fill={tok('gold')} stroke={tok('ink')} strokeOpacity={0.35} strokeWidth={2} />
+        : <rect width={w} height={h} rx={f === 'lace' ? 10 : 3} fill={f === 'gold' ? tok('gold') : f === 'lace' ? tok('trim') : '#fffdf8'} stroke={tok('ink')} strokeOpacity={0.3} strokeWidth={1.5} />}
+      {f === 'lace' && <rect x={pad / 3} y={pad / 3} width={w - (pad * 2) / 3} height={h - (pad * 2) / 3} rx={8} fill="none" stroke={tok('pink')} strokeWidth={2} strokeDasharray="2 4" />}
+      {f === 'gold' && <rect x={pad / 2} y={pad / 2} width={w - pad} height={h - pad} fill="none" stroke={tok('cream')} strokeOpacity={0.6} strokeWidth={1.2} />}
+      <image href={o.src} x={pad} y={pad} width={iw} height={ih} preserveAspectRatio="xMidYMid slice" clipPath={`url(#${clip})`} />
+    </g>
+  );
+}
 
 function Signboard({ o, text }: { o: SceneObject; text: string }) {
   const w = Math.max(90, text.length * 8.6 + 28);
@@ -92,18 +117,19 @@ export function Scene(p: SceneProps) {
     <svg ref={p.svgRef} className={`scene ${p.editing ? 'is-editing' : ''} labels-${p.showLabels ?? 'hover'}`} viewBox={`0 0 ${p.width} ${p.height}`} role="group" aria-label={p.ariaLabel}>
       {p.background}
       {sorted.map((o) => {
-        const interactive = !p.editing && (o.roomId || o.href || o.secret);
+        const playful = !p.editing && !o.roomId && !o.href && !o.secret && !!p.isPlayful?.(o);
+        const interactive = !p.editing && (o.roomId || o.href || o.secret || playful);
         const label = p.labelFor?.(o) ?? o.label;
         const cx = o.w / 2; const cy = o.h / 2;
         return (
           <g key={o.id}
-            className={`obj type-${o.type} ${interactive ? 'interactive' : ''} ${p.selectedId === o.id ? 'selected' : ''} ${o.hidden ? 'is-hidden' : ''} ${o.ownerOnly ? 'owner-only' : ''}`}
+            className={`obj type-${o.type} ${interactive ? 'interactive' : ''} ${p.selectedId === o.id ? 'selected' : ''} ${o.hidden ? 'is-hidden' : ''} ${o.ownerOnly ? 'owner-only' : ''} ${playful ? 'playful' : ''} ${p.classFor?.(o) ?? ''}`}
             transform={`translate(${o.x} ${o.y})${o.rotation ? ` rotate(${o.rotation} ${cx} ${cy})` : ''}`}
             opacity={o.hidden ? 0.35 : o.opacity ?? 1}
             data-id={o.id}
             tabIndex={interactive ? 0 : p.editing ? -1 : undefined}
             role={interactive ? (o.roomId || o.href ? 'link' : 'button') : undefined}
-            aria-label={interactive ? (label || (o.secret ? 'something curious' : undefined)) : undefined}
+            aria-label={interactive ? (playful ? `tap the ${(label || ART[o.art ?? '']?.label || 'decoration').toLowerCase()}` : label || (o.secret ? 'something curious' : undefined)) : undefined}
             onClick={interactive ? () => p.onActivate?.(o) : undefined}
             onKeyDown={interactive ? key(o) : undefined}
             onPointerDown={p.onObjectPointerDown ? (e) => p.onObjectPointerDown!(e, o) : undefined}

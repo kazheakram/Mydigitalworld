@@ -7,6 +7,7 @@ import { Empty, ErrorNote, Field, Loading, Modal } from '../ui/kit';
 import { useItems } from '../rooms/common';
 import { ModeShell, SectionTitle } from './Shell';
 import { isResting, quickSave, reminderDue, type InboxData, type InboxStatus } from './inboxLogic';
+import { useFeature } from '../lib/features';
 
 // The Letterbox: capture now, decide later. Optional cooldown lets new things rest before review.
 
@@ -43,6 +44,7 @@ const TABS: { id: string; label: string }[] = [
 
 export function LetterboxPage() {
   const { world, updateWorld, toast } = useStore();
+  const share = useFeature('shareTarget');
   const inbox = useItems<InboxData>('inbox');
   const [tab, setTab] = useState('new');
   const [q, setQ] = useState('');
@@ -138,13 +140,13 @@ export function LetterboxPage() {
           ))}
         </div>
       )}
-      <details className="lace-card save-anywhere">
+      {share.available && <details className="lace-card save-anywhere">
         <summary className="smallcaps">save from anywhere</summary>
         <p><strong>On a computer:</strong> make a new bookmark in your browser, name it “✉ Letterbox”, and paste this as its address. Clicking it on any page tucks that page into your letterbox.</p>
         <code className="bookmarklet">{bookmarklet}</code>
         <button className="btn small ghost" onClick={() => navigator.clipboard?.writeText(bookmarklet).then(() => toast('Copied ♡'))}>Copy</button>
         <p><strong>On a phone:</strong> add this site to your home screen (see the owner's guide). On Android, Ribbonmere then appears in the Share menu. On iPhone, use the bookmark above in Safari, or paste links here.</p>
-      </details>
+      </details>}
       <MoveToCollection item={moving} onClose={() => { setMoving(null); inbox.reload(); }} />
       <InboxEdit item={editing} onClose={() => { setEditing(null); inbox.reload(); }} />
     </ModeShell>

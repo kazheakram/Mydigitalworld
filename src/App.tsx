@@ -1,10 +1,16 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
+import { FeatureGate } from './lib/features';
+import { featureMode } from '../shared/features';
+import { setProgressContext } from './lib/progress';
+import { setLiveWorld } from './lib/liveWorld';
+import { PixieSprites, PixelateFilter } from './ui/PixieSprites';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { StoreProvider, useStore } from './lib/store';
 import { Loading, Toasts } from './ui/kit';
 import { PreviewBanner } from './ui/Nav';
 import { SeasonLayer } from './world/Season';
 import { PlacesPage, WorldPage } from './world/WorldPage';
+import { PathsPage } from './world/Paths';
 import { RoomPage } from './rooms/RoomPage';
 import { LoginPage, NotFound, SearchPage, SharePage } from './pages';
 import { SetupPage } from './SetupPage';
@@ -27,7 +33,43 @@ const ThemeClosetPage = lazy(() => import('./atelier/Studio').then((m) => ({ def
 const RoomsManagerPage = lazy(() => import('./atelier/Studio').then((m) => ({ default: m.RoomsManagerPage })));
 const MediaLibraryPage = lazy(() => import('./atelier/Studio').then((m) => ({ default: m.MediaLibraryPage })));
 const VillageSettingsPage = lazy(() => import('./atelier/Studio').then((m) => ({ default: m.VillageSettingsPage })));
+const FeatureManagerPage = lazy(() => import('./atelier/FeatureManager').then((m) => ({ default: m.FeatureManagerPage })));
+const BedroomPage = lazy(() => import('./private/Bedroom').then((m) => ({ default: m.BedroomPage })));
+const PetsPage = lazy(() => import('./private/Pets').then((m) => ({ default: m.PetsPage })));
+const CompanionLayer = lazy(() => import('./private/Pets').then((m) => ({ default: m.CompanionLayer })));
+const NewspaperPage = lazy(() => import('./private/Newspaper').then((m) => ({ default: m.NewspaperPage })));
+const ParlourPage = lazy(() => import('./private/Parlour').then((m) => ({ default: m.ParlourPage })));
+const ReadingJournalPage = lazy(() => import('./private/ReadingJournal').then((m) => ({ default: m.ReadingJournalPage })));
+const CommonplacePage = lazy(() => import('./private/CommonplacePage').then((m) => ({ default: m.CommonplacePage })));
+const ScrapbookPage = lazy(() => import('./private/Scrapbook').then((m) => ({ default: m.ScrapbookPage })));
+const LettersPage = lazy(() => import('./private/Letters').then((m) => ({ default: m.LettersPage })));
+const LetterViewPage = lazy(() => import('./private/Letters').then((m) => ({ default: m.LetterViewPage })));
+const CapsulesPage = lazy(() => import('./private/Capsules').then((m) => ({ default: m.CapsulesPage })));
+const RabbitMapPage = lazy(() => import('./private/RabbitMap').then((m) => ({ default: m.RabbitMapPage })));
+const CharmsPage = lazy(() => import('./private/Charms').then((m) => ({ default: m.CharmsPage })));
 const BackupsPage = lazy(() => import('./atelier/Studio').then((m) => ({ default: m.BackupsPage })));
+
+/** The following companion only loads for the owner when the Pets feature is on. */
+function OwnerCompanion() {
+  const { owner, world } = useStore();
+  if (!owner || featureMode(world, 'pets') !== 'on') return null;
+  return <Suspense fallback={null}><CompanionLayer /></Suspense>;
+}
+
+/** Connects the optional progress system to who is looking and which features are on; Alt+Q toggles Quiet. */
+function ProgressBridge() {
+  const { owner, world, toast, appearance, setAppearance } = useStore();
+  const achievementsOn = featureMode(world, 'achievements') !== 'off' && appearance !== 'quiet';
+  const pearlsOn = featureMode(world, 'pearls') !== 'off';
+  setLiveWorld(world);
+  useEffect(() => { setProgressContext({ owner, achievementsOn, pearlsOn, celebrate: (m) => toast(`✨ ${m}`, { essential: false }) }); }, [owner, achievementsOn, pearlsOn, toast]);
+  useEffect(() => {
+    const key = (e: KeyboardEvent) => { if (e.altKey && (e.key === 'q' || e.key === 'Q' || e.code === 'KeyQ')) { e.preventDefault(); setAppearance(appearance === 'quiet' ? null : 'quiet'); } };
+    window.addEventListener('keydown', key);
+    return () => window.removeEventListener('keydown', key);
+  }, [appearance, setAppearance]);
+  return null;
+}
 
 function Shell() {
   const { ready, offline } = useStore();
@@ -60,10 +102,16 @@ function Shell() {
       <a className="skip-link" href="#main">Skip to content</a>
       <PreviewBanner />
       <SeasonLayer />
+      <ProgressBridge />
+      <PixieSprites />
+      <PixelateFilter />
+      <OwnerCompanion />
       <Suspense fallback={<Loading />}>
+        <FeatureGate>
         <Routes>
           <Route path="/" element={<WorldPage />} />
           <Route path="/places" element={<PlacesPage />} />
+          <Route path="/paths" element={<PathsPage />} />
           <Route path="/room/:roomId" element={<RoomPage />} />
           <Route path="/room/:roomId/:itemId" element={<RoomPage />} />
           <Route path="/search" element={<SearchPage />} />
@@ -76,10 +124,22 @@ function Shell() {
           <Route path="/dollhouse/diary" element={<DiaryPage />} />
           <Route path="/dollhouse/bookmarks" element={<CabinetPage />} />
           <Route path="/dollhouse/favorites" element={<ConservatoryPage />} />
+          <Route path="/dollhouse/bedroom" element={<BedroomPage />} />
+          <Route path="/dollhouse/pets" element={<PetsPage />} />
+          <Route path="/dollhouse/newspaper" element={<NewspaperPage />} />
+          <Route path="/dollhouse/parlour" element={<ParlourPage />} />
+          <Route path="/dollhouse/reading-journal" element={<ReadingJournalPage />} />
+          <Route path="/dollhouse/commonplace" element={<CommonplacePage />} />
+          <Route path="/dollhouse/scrapbook" element={<ScrapbookPage />} />
+          <Route path="/dollhouse/letters" element={<LettersPage />} />
+          <Route path="/letter/:id" element={<LetterViewPage />} />
           <Route path="/stargirl" element={<StargirlPage />} />
           <Route path="/stargirl/rabbit-holes" element={<RabbitHolesPage />} />
           <Route path="/stargirl/discoveries" element={<DiscoveriesPage />} />
           <Route path="/stargirl/picks" element={<PicksPage />} />
+          <Route path="/stargirl/map" element={<RabbitMapPage />} />
+          <Route path="/dollhouse/capsules" element={<CapsulesPage />} />
+          <Route path="/dollhouse/charms" element={<CharmsPage />} />
           <Route path="/atelier" element={<WorldEditorPage />} />
           <Route path="/atelier/room/:roomId" element={<RoomEditorPage />} />
           <Route path="/atelier/theme" element={<ThemeClosetPage />} />
@@ -87,8 +147,10 @@ function Shell() {
           <Route path="/atelier/media" element={<MediaLibraryPage />} />
           <Route path="/atelier/village" element={<VillageSettingsPage />} />
           <Route path="/atelier/backup" element={<BackupsPage />} />
+          <Route path="/atelier/features" element={<FeatureManagerPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
+        </FeatureGate>
       </Suspense>
       <Toasts />
     </>

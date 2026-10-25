@@ -17,11 +17,13 @@ export interface Item<D = Record<string, any>> {
 export const ITEM_KINDS = [
   'book', 'entry', 'artwork', 'music', 'note', 'bookmark', 'inbox', 'expedition',
   'link', 'drink', 'star', 'secret', 'todo', 'guestbook', 'media', 'freeform',
+  // Ribbonmere 2.0
+  'pet', 'excerpt', 'film', 'memory', 'scrapbook', 'letter', 'capsule', 'edition', 'challenge', 'progress',
 ] as const;
 export type ItemKind = (typeof ITEM_KINDS)[number];
 
 /** Kinds that only ever belong to the owner and are never served to visitors. */
-export const ALWAYS_PRIVATE_KINDS: ItemKind[] = ['inbox', 'expedition', 'todo', 'bookmark'];
+export const ALWAYS_PRIVATE_KINDS: ItemKind[] = ['inbox', 'expedition', 'todo', 'bookmark', 'capsule', 'edition', 'challenge', 'progress'];
 
 /** A thing placed on a scene (the world map, or a freeform room). Coordinates are in scene units. */
 export interface SceneObject {
@@ -51,6 +53,10 @@ export interface SceneObject {
   animation?: string;
   /** Easter egg: clicking reveals a secret or stamp. */
   secret?: { message?: string; stamp?: string; roomId?: string };
+  /** Belongs to an optional feature; hidden everywhere while that feature is switched off. */
+  feature?: string;
+  /** Picture frame drawn around an image (Ribbonmere 2.0). */
+  frame?: 'gold' | 'lace' | 'polaroid' | 'oval';
 }
 
 export interface Region {
@@ -63,7 +69,9 @@ export interface Region {
 
 export type RoomTemplate =
   | 'welcome' | 'library' | 'journal' | 'gallery' | 'music' | 'postoffice' | 'cafe'
-  | 'garden' | 'observatory' | 'secret' | 'collection' | 'freeform';
+  | 'garden' | 'observatory' | 'secret' | 'collection' | 'freeform'
+  // Ribbonmere 2.0
+  | 'cinema' | 'recordstore' | 'bookstore' | 'museum' | 'commonplace' | 'region' | 'games';
 
 export interface Room {
   id: string;
@@ -98,7 +106,15 @@ export interface WorldConfig {
   inbox: { cooldownHours: number };
   /** Names and little captions for the three modes; all editable. */
   modes: Record<'visitor' | 'private' | 'stargirl', ModeCopy>;
+  /** Ribbonmere 2.0: on / hidden / off for every optional feature, plus its own settings. */
+  features?: Record<string, FeatureState>;
+  /** The appearance visitors see first (each viewer can switch for themselves). */
+  appearanceDefault?: Appearance;
 }
+
+export type FeatureMode = 'on' | 'hidden' | 'off';
+export interface FeatureState { mode: FeatureMode; settings?: Record<string, any> }
+export type Appearance = 'coquette' | 'quiet' | 'pixie' | 'midnight';
 
 export interface ModeCopy {
   title: string;

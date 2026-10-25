@@ -8,6 +8,10 @@ import { TopNav } from '../ui/Nav';
 import { Icon, TEMPLATE_ICON } from '../ui/Icon';
 import { BowIcon, Modal, Tag } from '../ui/kit';
 import { addStamp, getStamps, STAMP_NAMES } from '../lib/stamps';
+import { featureMode } from '../../shared/features';
+import { roomFeatureMode } from '../lib/features';
+import { DaylightOverlay, EffectLayer, WeatherOverlay, pokeFor, resolveWeather, useDaypart, type Effect } from './Atmosphere';
+import { award } from '../lib/progress';
 
 // Rosegarden Mode — the public village. The illustrated map is the navigation.
 
@@ -38,15 +42,26 @@ export function Intro({ onDone }: { onDone: () => void }) {
 }
 
 export function WorldPage() {
-  const { world, owner, soundOn, toast } = useStore();
+  const { world, owner, soundOn, toast, appearance } = useStore();
   const nav = useNavigate();
   const narrow = useIsNarrow();
-  const [intro, setIntro] = useState(() => { try { return world.introEnabled && !sessionStorage.getItem('rm-entered'); } catch { return world.introEnabled; } });
+  const introOn = world.introEnabled && featureMode(world, 'intro') === 'on' && appearance !== 'quiet';
+  const stampsOn = featureMode(world, 'stamps') === 'on' && appearance !== 'quiet';
+  const [intro, setIntro] = useState(() => { try { return introOn && !sessionStorage.getItem('rm-entered'); } catch { return introOn; } });
   const [zoom, setZoom] = useState(narrow ? 1.9 : 1);
   const [secret, setSecret] = useState<{ title: string; message: string; stamp?: string; fresh?: boolean } | null>(null);
   const [region, setRegion] = useState<Region | null>(null);
   const [stamps, setStamps] = useState(getStamps);
   const [welcomeOpen, setWelcomeOpen] = useState(true);
+  const quiet = appearance === 'quiet';
+  const weatherOn = featureMode(world, 'weather') === 'on' && !quiet;
+  const daynightOn = featureMode(world, 'daynight') === 'on' && !quiet;
+  const playOn = featureMode(world, 'interactions') === 'on' && !quiet;
+  const daypart = useDaypart(world, daynightOn);
+  const weather = useMemo(() => resolveWeather(world), [world]);
+  const [effects, setEffects] = useState<Effect[]>([]);
+  const [lampsOff, setLampsOff] = useState<Set<string>>(() => new Set());
+  const [hopping, setHopping] = useState<string | null>(null);
   const viewport = useRef<HTMLDivElement>(null);
   const { width, height } = world.scene;
   const mode = world.modes.visitor;
@@ -59,13 +74,34 @@ export function WorldPage() {
   }, [zoom]);
 
   const roomsById = useMemo(() => new Map(world.rooms.map((r) => [r.id, r])), [world.rooms]);
-  const places = world.rooms.filter((r) => r.visibility !== 'unlisted' && (owner || r.visibility === 'public'));
-  const objects = world.objects.filter((o) => owner || !o.ownerOnly);
+  const places = world.rooms.filter((r) => r.visibility !== 'unlisted' && (owner || r.visibility === 'public') && roomFeatureMode(world, r.template) === 'on');
+  // Buildings of hidden or resting features step off the map (their data is untouched);
+  // with easter eggs switched off, curious objects become plain decorations.
+  const objects = world.objects
+    .filter((o) => !(o.feature && featureMode(world, o.feature) !== 'on'))
+    .filter((o) => (owner || !o.ownerOnly) && (!o.roomId || !roomsById.has(o.roomId) || roomFeatureMode(world, roomsById.get(o.roomId)!.template) === 'on'))
+    .map((o) => (o.secret && !stampsOn ? { ...o, secret: undefined } : o));
 
+  const poke = (o: SceneObject) => {
+    const kind = pokeFor(o.art);
+    if (!kind) return;
+    if (kind === 'lamp') { setLampsOff((s) => { const n = new Set(s); n.has(o.id) ? n.delete(o.id) : n.add(o.id); return n; }); chime(soundOn, [523]); return; }
+    if (kind === 'hop') { setHopping(o.id); window.setTimeout(() => setHopping((h) => (h === o.id ? null : h)), 700); }
+    const key = Date.now() + Math.random();
+    const y = kind === 'splash' ? o.y + o.h * 0.75 : kind === 'petals' ? o.y + o.h * 0.35 : o.y;
+    setEffects((e) => [...e.slice(-6), { key, kind, x: o.x + o.w / 2, y }]);
+    window.setTimeout(() => setEffects((e) => e.filter((x) => x.key !== key)), 1600);
+    chime(soundOn, kind === 'splash' ? [659, 784] : [988]);
+  };
   const activate = (o: SceneObject) => {
+    if (!o.roomId && !o.href && !o.secret) { if (playOn) poke(o); return; }
     if (o.secret) {
       const fresh = o.secret.stamp ? addStamp(o.secret.stamp) : false;
-      if (fresh) { setStamps(getStamps()); chime(soundOn, [880, 1175, 1568]); }
+      if (fresh) {
+        setStamps(getStamps()); chime(soundOn, [880, 1175, 1568]);
+        award('curious');
+        if (getStamps().length >= 5) award('stamp-collector');
+      }
       if (o.secret.roomId && roomsById.has(o.secret.roomId)) {
         if (fresh) toast(`You found a stamp: ${STAMP_NAMES[o.secret.stamp!] ?? o.secret.stamp} ✧`);
         nav(`/room/${o.secret.roomId}`);
@@ -81,11 +117,11 @@ export function WorldPage() {
   };
 
   return (
-    <div className="world-page mode-rosegarden">
-      {intro && <Intro onDone={() => { setIntro(false); try { sessionStorage.setItem('rm-entered', '1'); } catch { /* ignore */ } }} />}
+    <div className="world-page mode-rosegarden" data-daypart={daynightOn ? daypart : undefined} data-weather={weatherOn ? weather : undefined}>
+      {intro && <Intro onDone={() => { setIntro(false); award('first-steps'); try { sessionStorage.setItem('rm-entered', '1'); } catch { /* ignore */ } }} />}
 
       <header className="world-header">
-        <div className="header-note hide-narrow">{mode.notes[0] && <Tag tilt={-4}>{mode.notes[0]}</Tag>}</div>
+        <div className="header-note hide-narrow decor-only">{mode.notes[0] && <Tag tilt={-4}>{mode.notes[0]}</Tag>}</div>
         <div className="cartouche lace-card">
           <BowIcon size={54} className="cartouche-bow" />
           <h1 className="script">{mode.title}</h1>
@@ -93,7 +129,7 @@ export function WorldPage() {
         </div>
         <div className="header-right">
           <TopNav />
-          {mode.notes[1] && <span className="hide-narrow"><Tag tilt={4}>{mode.notes[1]}</Tag></span>}
+          {mode.notes[1] && <span className="hide-narrow decor-only"><Tag tilt={4}>{mode.notes[1]}</Tag></span>}
         </div>
       </header>
 
@@ -124,6 +160,13 @@ export function WorldPage() {
               labelFor={(o) => o.label || (o.roomId ? roomsById.get(o.roomId)?.name : undefined)}
               onActivate={activate}
               onRegion={setRegion}
+              isPlayful={playOn ? (o) => !!pokeFor(o.art) : undefined}
+              classFor={(o) => (lampsOff.has(o.id) ? 'lamp-off' : hopping === o.id ? 'hopping' : undefined)}
+              overlay={<>
+                {daynightOn && <DaylightOverlay part={daypart} width={width} height={height} glows={objects.filter((o) => !lampsOff.has(o.id) && (o.type === 'building' || o.art === 'lamppost' || o.art === 'candle')).map((o) => (o.type === 'building' ? { x: o.x + o.w / 2, y: o.y + o.h * 0.6, r: o.w * 0.45 } : { x: o.x + o.w / 2, y: o.y + o.h * 0.18, r: o.w * 0.9 }))} />}
+                {weatherOn && <WeatherOverlay weather={weather} width={width} height={height} />}
+                <EffectLayer effects={effects} />
+              </>}
             />
           </div>
         </div>
@@ -131,7 +174,7 @@ export function WorldPage() {
           <button className="icon-btn" onClick={() => setZoom((z) => Math.min(3, z + 0.4))} aria-label="Zoom in">＋</button>
           <button className="icon-btn" onClick={() => setZoom((z) => Math.max(1, z - 0.4))} aria-label="Zoom out">－</button>
         </div>
-        {stamps.length > 0 && (
+        {stampsOn && stamps.length > 0 && (
           <div className="stamp-book lace-card" aria-label={`You have found ${stamps.length} stamps`}>
             <span className="smallcaps">stamps found</span>
             <div>{stamps.map((s) => <span key={s} className="stamp-chip" title={STAMP_NAMES[s] ?? s}>✉</span>)}</div>
@@ -164,7 +207,7 @@ export function WorldPage() {
 /** An accessible, plain list of every place — the keyboard- and screen-reader-friendly path. */
 export function PlacesPage() {
   const { world, owner } = useStore();
-  const places = world.rooms.filter((r) => r.visibility !== 'unlisted' || owner);
+  const places = world.rooms.filter((r) => (r.visibility !== 'unlisted' || owner) && roomFeatureMode(world, r.template) === 'on');
   return (
     <div className="page">
       <header className="page-header"><TopNav /></header>

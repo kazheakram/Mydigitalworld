@@ -1,5 +1,6 @@
 import { api, items as itemsApi } from '../lib/api';
 import { isUrl, linkType } from '../lib/util';
+import { liveFeatureOn } from '../lib/liveWorld';
 
 export type InboxStatus = 'new' | 'keep' | 'later' | 'archived';
 export interface InboxData {
@@ -17,7 +18,7 @@ export async function quickSave(text: string, cooldownHours: number, extra: Part
     ...extra,
   };
   const saved = await itemsApi.create<InboxData>('inbox', data);
-  if (url && !extra.title) {
+  if (url && !extra.title && liveFeatureOn('linkPreviews')) {
     api('POST', '/api/unfurl', { url })
       .then((m) => m.title && itemsApi.update(saved.id, { data: { title: m.title, description: m.description, image: m.image } }))
       .catch(() => { /* no preview — fine, the link itself is saved */ });

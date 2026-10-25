@@ -4,6 +4,8 @@ import { DEFAULT_WORLD } from '../../shared/defaultWorld';
 import { COQUETTE } from '../../shared/themes';
 import { api, setPreviewAsPublic } from './api';
 import { applyTheme } from './theme';
+import { applyAppearance } from '../../shared/appearance';
+import type { Appearance } from '../../shared/types';
 
 // App-wide state: who is looking (owner or visitor), the world map/rooms config and the theme.
 // The owner always sees the *draft*; visitors only ever receive the published, filtered copy.
@@ -35,8 +37,11 @@ interface Store {
   setMotionOff: (v: boolean) => void;
   soundOn: boolean;
   setSoundOn: (v: boolean) => void;
-  toast: (msg: string) => void;
+  toast: (msg: string, opts?: { essential?: boolean }) => void;
   toasts: { id: number; msg: string }[];
+  /** How Ribbonmere looks on this device: coquette / quiet / pixie / midnight. */
+  appearance: Appearance;
+  setAppearance: (a: Appearance | null) => void;
   offline: boolean;
 }
 
@@ -69,10 +74,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [soundOn, setSoundOnState] = useState(() => readPref('rm-sound', false));
   const [offline, setOffline] = useState(false);
   const [toasts, setToasts] = useState<{ id: number; msg: string }[]>([]);
+  const [appearancePref, setAppearancePref] = useState<Appearance | null>(() => { try { return (localStorage.getItem('rm-appearance') as Appearance) || null; } catch { return null; } });
+  const appearance: Appearance = appearancePref ?? world.appearanceDefault ?? 'coquette';
+  const appearanceRef = useRef(appearance);
+  appearanceRef.current = appearance;
   const worldRef = useRef(world);
   worldRef.current = world;
 
-  const toast = useCallback((msg: string) => {
+  const toast = useCallback((msg: string, opts: { essential?: boolean } = {}) => {
+    // Quiet Mode keeps only messages that matter (problems, warnings), not little confirmations.
+    const essential = opts.essential ?? /not |n't|couldn|could not|error|fail|⚠|limit|refused|offline|expired|missing|please|wrong|too many/i.test(msg);
+    if (appearanceRef.current === 'quiet' && !essential) return;
     const id = Date.now() + Math.random();
     setToasts((t) => [...t, { id, msg }]);
     setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 3800);
@@ -115,7 +127,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     window.addEventListener('rm-sync-error', onError);
     return () => { window.removeEventListener('rm-auth', onAuth); window.removeEventListener('rm-remote', onRemote); window.removeEventListener('rm-sync-error', onError); };
   }, [refresh, toast]);
-  useEffect(() => { applyTheme((themePreview ?? theme).active, motionOff); }, [theme, themePreview, motionOff]);
+  useEffect(() => {
+    applyTheme(applyAppearance((themePreview ?? theme).active, appearance), motionOff || appearance === 'quiet');
+    document.documentElement.dataset.appearance = appearance;
+  }, [theme, themePreview, motionOff, appearance]);
 
   const persist = useCallback(async (key: 'world' | 'theme', body: unknown) => {
     setSaveState('saving'); setSaveError(null);
@@ -162,7 +177,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     motionOff, setMotionOff: (v) => { setMotionOffState(v); writePref('rm-motion-off', v); },
     soundOn, setSoundOn: (v) => { setSoundOnState(v); writePref('rm-sound', v); },
     toast, toasts, offline,
-  }), [offline, ready, auth, preview, setPreview, world, theme, themePreview, unpub, saveState, saveError, saveWorld, updateWorld, saveTheme, publish, discard, refresh, motionOff, soundOn, toast, toasts]);
+    appearance,
+    setAppearance: (a) => { setAppearancePref(a); try { if (a) localStorage.setItem('rm-appearance', a); else localStorage.removeItem('rm-appearance'); } catch { /* storage blocked */ } },
+  }), [appearance, offline, ready, auth, preview, setPreview, world, theme, themePreview, unpub, saveState, saveError, saveWorld, updateWorld, saveTheme, publish, discard, refresh, motionOff, soundOn, toast, toasts]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

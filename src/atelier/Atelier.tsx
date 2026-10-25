@@ -1,4 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { InteriorBackground } from '../world/Interior';
+import { LandscapeBackground } from '../world/Landscapes';
+import { award } from '../lib/progress';
 import { Link, NavLink, useParams } from 'react-router-dom';
 import type { SceneObject, WorldConfig } from '../../shared/types';
 import { DEFAULT_WORLD } from '../../shared/defaultWorld';
@@ -15,6 +18,7 @@ import { SceneEditor, useHistory } from './SceneEditor';
 const TABS = [
   { to: '/atelier', label: 'Village map', end: true },
   { to: '/atelier/theme', label: 'Theme closet' },
+  { to: '/atelier/features', label: 'Features' },
   { to: '/atelier/rooms', label: 'Rooms' },
   { to: '/atelier/media', label: 'Media & decorations' },
   { to: '/atelier/village', label: 'Village settings' },
@@ -138,6 +142,7 @@ export function RoomEditorPage() {
     if (!room) return;
     const objs = hist.value; savedRef.current = objs; force((n) => n + 1);
     await saveWorld({ ...world, rooms: world.rooms.map((r) => (r.id === roomId ? { ...r, scene: objs, sceneBackground: bg || undefined } : r)) });
+    if (room.settings?.bedroom) award('decorator');
   };
   useAutosave(dirty, save);
   if (!room) return <AtelierShell><Empty title="No such room" /></AtelierShell>;
@@ -148,7 +153,7 @@ export function RoomEditorPage() {
         {bg && <button className="btn small ghost" onClick={() => setBg('')}>Theme background</button>}
       </p>
       <SceneEditor kind="room" width={1200} height={750} objects={hist.value} onChange={hist.commit} rooms={world.rooms}
-        background={<rect width={1200} height={750} fill={bg || 'var(--c-cream)'} />}
+        background={room.template === 'region' && !bg ? <LandscapeBackground kind={room.settings?.landscape ?? 'meadow'} /> : room.settings?.interior && !bg ? <InteriorBackground interior={room.settings.interior} /> : <rect width={1200} height={750} fill={bg || 'var(--c-cream)'} />}
         toolbarExtra={<PublishBar dirty={dirty} onSave={save} hist={hist} />} />
     </AtelierShell>
   );

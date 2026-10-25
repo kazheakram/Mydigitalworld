@@ -1,26 +1,42 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
+import { Resting, roomFeatureMode } from '../lib/features';
+import { featureForTemplate } from '../../shared/features';
+import { award, noteVisit } from '../lib/progress';
 import { Link, useParams } from 'react-router-dom';
 import type { Room } from '../../shared/types';
 import { useStore } from '../lib/store';
 import { themeVars } from '../lib/theme';
+import { applyAppearance } from '../../shared/appearance';
 import { TopNav, BackToVillage } from '../ui/Nav';
 import { BowIcon, Empty, VisBadge, Field, Modal, VisibilityPicker } from '../ui/kit';
 import { Icon, TEMPLATE_ICON } from '../ui/Icon';
 import { Prose } from '../lib/markdown';
 import { WelcomeRoom, LibraryRoom, JournalRoom, GalleryRoom, MusicRoom } from './templatesA';
+import { CommonplaceRoom } from './Commonplace';
+import { RegionRoom } from '../world/Paths';
+import { GamesRoom } from './Games';
+import { BookstoreRoom, CinemaRoom, MuseumRoom, RecordStoreRoom } from './templatesC';
 import { PostOfficeRoom, CafeRoom, GardenRoom, ObservatoryRoom, SecretRoom, CollectionRoom, FreeformRoom } from './templatesB';
 
 const TEMPLATES: Record<string, (p: { room: Room; itemId?: string }) => ReactNode> = {
   welcome: WelcomeRoom, library: LibraryRoom, journal: JournalRoom, gallery: GalleryRoom, music: MusicRoom,
   postoffice: PostOfficeRoom, cafe: CafeRoom, garden: GardenRoom, observatory: ObservatoryRoom, secret: SecretRoom,
-  collection: CollectionRoom, freeform: FreeformRoom,
+  collection: CollectionRoom, freeform: FreeformRoom, commonplace: CommonplaceRoom,
+  cinema: CinemaRoom, recordstore: RecordStoreRoom, bookstore: BookstoreRoom, museum: MuseumRoom, region: RegionRoom, games: GamesRoom,
 };
 
 export function RoomPage() {
   const { roomId, itemId } = useParams();
-  const { world, theme, owner, updateWorld } = useStore();
+  const { world, theme, owner, updateWorld, appearance } = useStore();
   const room = world.rooms.find((r) => r.id === roomId);
   const [editingRoom, setEditingRoom] = useState(false);
+  useEffect(() => {
+    // Optional little celebrations for wandering (never a checklist).
+    if (!room) return;
+    if (room.template === 'secret') award('secret-garden');
+    if (room.template === 'region') award('beyond');
+    noteVisit(room.id).then((n) => { if (n >= 6) award('wanderer'); });
+  }, [room?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!room) {
     return (
@@ -29,8 +45,14 @@ export function RoomPage() {
       </div>
     );
   }
+  if (roomFeatureMode(world, room.template) === 'off') {
+    const f = featureForTemplate(room.template)!;
+    return <Resting name={f.name} owner={owner} />;
+  }
   const Tpl = TEMPLATES[room.template] ?? FreeformRoom;
-  const style = { ...themeVars(theme.active, { ...(theme.active.locations?.[room.id] ?? {}), ...(room.theme ?? {}) }) } as React.CSSProperties;
+  // The room wears the current appearance too; in Midnight its own (light) colour choices step aside.
+  const roomColors = appearance === 'midnight' ? {} : { ...(theme.active.locations?.[room.id] ?? {}), ...(room.theme ?? {}) };
+  const style = { ...themeVars(applyAppearance(theme.active, appearance), roomColors) } as React.CSSProperties;
 
   return (
     <div className={`page room-page tpl-${room.template}`} style={style}>

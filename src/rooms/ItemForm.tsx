@@ -5,6 +5,7 @@ import { Field, ImagePicker, Stars, VisibilityPicker } from '../ui/kit';
 import { items as itemsApi, api } from '../lib/api';
 import { useStore } from '../lib/store';
 import { isUrl } from '../lib/util';
+import { liveFeatureOn } from '../lib/liveWorld';
 
 // The universal content editor. Used for books, journal pages, artworks, notes, drinks…
 
@@ -47,7 +48,7 @@ export function ItemForm({ kind, item, roomId, ctx = {}, onSaved, onCancel, onDe
   const alwaysPrivate = kind === 'bookmark';
 
   const fetchPreview = async () => {
-    if (!isUrl(data.url ?? '')) return;
+    if (!isUrl(data.url ?? '') || !liveFeatureOn('linkPreviews')) return;
     try {
       const m = await api('POST', '/api/unfurl', { url: data.url });
       setData((d) => ({ ...d, title: d.title || m.title, description: d.description || m.description, image: d.image || m.image }));
@@ -85,7 +86,7 @@ export function ItemForm({ kind, item, roomId, ctx = {}, onSaved, onCancel, onDe
           <button type="button" className="linkish" onClick={() => { forgetDraft(); setData({ ...(initial ?? {}) }); setVis(def.defaultVisibility); setRestored(false); touched.current = false; }}>Start fresh instead</button>
         </p>
       )}
-      {def.fields.map((f) => <FieldInput key={f.key} f={f} value={data[f.key]} onChange={(v) => set(f.key, v)} ctx={ctx} onUrlBlur={f.type === 'url' && f.key === 'url' ? fetchPreview : undefined} />)}
+      {def.fields.map((f) => <FieldInput key={f.key} f={f} value={data[f.key]} onChange={(v) => set(f.key, v)} ctx={ctx} onUrlBlur={f.type === 'url' && f.key === 'url' && liveFeatureOn('linkPreviews') ? fetchPreview : undefined} />)}
       {alwaysPrivate
         ? <p className="muted">🔒 Bookmarks are always private.</p>
         : <Field group label="Who can see this"><VisibilityPicker value={vis} onChange={setVisTouched} /></Field>}

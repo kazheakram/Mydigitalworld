@@ -1,4 +1,5 @@
 import { ITEM_KINDS, type Item, type ItemKind, type Visibility, type WorldConfig } from './types';
+import { featureForTemplate, featureMode, publicFeatures } from './features';
 
 // Rules shared by every backend (the Node server and the Firebase/Cloudflare version),
 // so privacy filtering and validation behave identically everywhere.
@@ -9,16 +10,19 @@ export const MEDIA_URL_RE = /^(https?:\/\/|\/uploads\/|\/media\/)/i;
 
 /** What visitors receive: no private rooms, no owner-only or hidden objects, nothing from unrevealed regions. */
 export function publicWorld(w: WorldConfig): WorldConfig {
-  const rooms = w.rooms.filter((r) => r.visibility !== 'private');
+  // Rooms belonging to a switched-off feature rest quietly, as if they weren't there.
+  const resting = (t: string) => { const f = featureForTemplate(t); return !!f && featureMode(w, f.id) === 'off'; };
+  const rooms = w.rooms.filter((r) => r.visibility !== 'private' && !resting(r.template));
   const roomIds = new Set(rooms.map((r) => r.id));
   const hiddenRegions = new Set(w.regions.filter((r) => !r.revealed).map((r) => r.id));
-  const objects = w.objects.filter((o) => !o.ownerOnly && !o.hidden && !(o.regionId && hiddenRegions.has(o.regionId)) && (!o.roomId || roomIds.has(o.roomId)));
+  const objects = w.objects.filter((o) => !o.ownerOnly && !o.hidden && !(o.regionId && hiddenRegions.has(o.regionId)) && (!o.roomId || roomIds.has(o.roomId)) && !(o.feature && featureMode(w, o.feature) === 'off'));
   return {
     ...w,
     objects,
     rooms: rooms.map((r) => ({ ...r, scene: r.scene?.filter((o) => !o.hidden && !o.ownerOnly) })),
     regions: w.regions.map((r) => (r.revealed ? r : { ...r, name: r.name })),
     trash: [], dashboard: [], inbox: { cooldownHours: 0 },
+    features: publicFeatures(w.features),
   };
 }
 export const publicTheme = (t: any) => ({ active: t.active, custom: [] });
@@ -35,11 +39,26 @@ export function stripPrivateFields(it: Item): Item {
   return { ...it, data: splitPrivate(it.data).pub };
 }
 
+/** True if a list sits directly inside another list somewhere in the value. Firestore (the cloud
+ *  version) can't store that, so both versions refuse it to keep backups portable between them. */
+export function hasNestedList(v: any): boolean {
+  if (Array.isArray(v)) return v.some((x) => Array.isArray(x) || hasNestedList(x));
+  if (v && typeof v === 'object') return Object.values(v).some(hasNestedList);
+  return false;
+}
+/** Make old data storable in Firestore: map threads become {from, to}; any other inner list becomes {0: …, 1: …}. */
+export function unnestLists(v: any, key = ''): any {
+  if (Array.isArray(v)) return v.map((x) => (Array.isArray(x) ? (key === 'links' && x.length === 2 ? { from: x[0], to: x[1] } : Object.fromEntries(x.map((y, i) => [String(i), unnestLists(y)]))) : unnestLists(x)));
+  if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, unnestLists(x, k)]));
+  return v;
+}
+
 export function validateItem(kind: any, visibility: any, data: any, roomId: any): string | null {
   if (!ITEM_KINDS.includes(kind as ItemKind)) return 'Unknown kind of item.';
   if (!VISIBILITIES.includes(visibility)) return 'Visibility must be private, public or unlisted.';
   if (typeof data !== 'object' || data === null || Array.isArray(data)) return 'Item data must be an object.';
   if (JSON.stringify(data).length > 400_000) return 'That item is too large.';
+  if (hasNestedList(data)) return "That item has a list inside a list, which the cloud database can't store.";
   if (roomId !== null && (typeof roomId !== 'string' || roomId.length > 80)) return 'Invalid room.';
   for (const key of ['url', 'link', 'href', 'image', 'cover']) {
     const v = data[key];

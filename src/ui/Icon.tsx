@@ -38,5 +38,5 @@ export function Icon({ name, size = 20, className = '' }: { name: string; size?:
 }
 export const TEMPLATE_ICON: Record<string, string> = {
   welcome: 'home', library: 'book', journal: 'quill', gallery: 'palette', music: 'music', postoffice: 'envelope',
-  cafe: 'cup', garden: 'sprout', observatory: 'telescope', secret: 'butterfly', collection: 'well', freeform: 'sparkle',
+  cafe: 'cup', garden: 'sprout', observatory: 'telescope', secret: 'butterfly', collection: 'well', freeform: 'sparkle', commonplace: 'quill', cinema: 'sparkle', recordstore: 'music', bookstore: 'book', museum: 'palette', region: 'sprout', games: 'heart',
 };

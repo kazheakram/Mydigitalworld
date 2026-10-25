@@ -35,9 +35,13 @@ const watch = (p: Page) => {
 const shot = async (p: Page, name: string) => { if (!only.length || only.includes(name)) await p.screenshot({ path: path.join(OUT, `${name}.png`) }); };
 const step = (s: string) => console.log(`  ✓ ${s}`);
 
+// Visitor screenshots are taken at late morning, so the village's day & night light is the same on every run.
+const daytime = async (c: import('playwright').BrowserContext) => { const d = new Date(); d.setHours(11, 0, 0, 0); await c.clock.setFixedTime(d); };
+
 try {
   // ── visitor ──
   const visitor = await browser.newContext({ viewport: { width: 1440, height: 960 } });
+  await daytime(visitor);
   const v = await visitor.newPage(); watch(v);
   await v.goto(BASE);
   await v.getByRole('button', { name: /untie the ribbon/i }).waitFor();
@@ -226,6 +230,7 @@ try {
 
   // Mobile
   const phone = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
+  await daytime(phone);
   const m = await phone.newPage(); watch(m);
   await m.goto(BASE);
   await m.getByRole('button', { name: /untie the ribbon/i }).click();
