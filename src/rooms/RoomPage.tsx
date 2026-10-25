@@ -6,6 +6,7 @@ import { Link, useParams } from 'react-router-dom';
 import type { Room } from '../../shared/types';
 import { useStore } from '../lib/store';
 import { themeVars } from '../lib/theme';
+import { applyAppearance } from '../../shared/appearance';
 import { TopNav, BackToVillage } from '../ui/Nav';
 import { BowIcon, Empty, VisBadge, Field, Modal, VisibilityPicker } from '../ui/kit';
 import { Icon, TEMPLATE_ICON } from '../ui/Icon';
@@ -26,7 +27,7 @@ const TEMPLATES: Record<string, (p: { room: Room; itemId?: string }) => ReactNod
 
 export function RoomPage() {
   const { roomId, itemId } = useParams();
-  const { world, theme, owner, updateWorld } = useStore();
+  const { world, theme, owner, updateWorld, appearance } = useStore();
   const room = world.rooms.find((r) => r.id === roomId);
   const [editingRoom, setEditingRoom] = useState(false);
   useEffect(() => {
@@ -49,7 +50,9 @@ export function RoomPage() {
     return <Resting name={f.name} owner={owner} />;
   }
   const Tpl = TEMPLATES[room.template] ?? FreeformRoom;
-  const style = { ...themeVars(theme.active, { ...(theme.active.locations?.[room.id] ?? {}), ...(room.theme ?? {}) }) } as React.CSSProperties;
+  // The room wears the current appearance too; in Midnight its own (light) colour choices step aside.
+  const roomColors = appearance === 'midnight' ? {} : { ...(theme.active.locations?.[room.id] ?? {}), ...(room.theme ?? {}) };
+  const style = { ...themeVars(applyAppearance(theme.active, appearance), roomColors) } as React.CSSProperties;
 
   return (
     <div className={`page room-page tpl-${room.template}`} style={style}>

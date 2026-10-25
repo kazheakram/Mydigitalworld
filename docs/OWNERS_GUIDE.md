@@ -258,6 +258,8 @@ The ☾ menu has four looks. They change how the site looks, never what's in it:
 - **Pixie:** pixel-art edges, a pixel font and little sprites.
 - **Midnight:** deep plum, dusty rose and candlelight.
 
+Rooms and Stargirl Mode wear the chosen look too. In **Midnight**, a room's own custom colours (set in the Theme Closet or the room editor) step aside, because they were chosen for light pages. They come straight back when you switch to another look, and nothing is changed or lost.
+
 Each person's choice is remembered on their own device. To choose which look visitors get first, go to *Atelier → Features → appearance visitors see first*.
 
 ## 16. Companions

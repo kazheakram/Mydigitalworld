@@ -62,3 +62,7 @@ export async function uploadImage(file: File, opts: { category?: string; decorat
     'content-type': file.type || 'application/octet-stream',
   });
 }
+
+// Test hook for the emulator-only cloud test build (never present in a real deployment, which
+// doesn't set VITE_USE_EMULATORS): lets the browser tests read data exactly as the app does.
+if (import.meta.env.VITE_USE_EMULATORS === '1' && typeof window !== 'undefined') (window as any).__rmApi = api;

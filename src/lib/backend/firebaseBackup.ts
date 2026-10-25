@@ -1,6 +1,6 @@
 import { collection, doc, getDocs, writeBatch } from 'firebase/firestore';
 import { ALWAYS_PRIVATE_KINDS, ITEM_KINDS } from '../../../shared/types';
-import { splitPrivate, VISIBILITIES } from '../../../shared/logic';
+import { splitPrivate, unnestLists, VISIBILITIES } from '../../../shared/logic';
 import { firebase } from './firebase';
 import { internals } from './firebaseApi';
 import { track } from './sync';
@@ -123,7 +123,7 @@ export async function importFirebase(b: Backup, mode: 'replace' | 'merge', say: 
       say(`Restoring your books, pages and notes… ${Math.min(i + 200, content.length)} of ${content.length}`);
       const batch = writeBatch(db);
       for (const it of content.slice(i, i + 200)) {
-        const data = rewrite(it.data ?? {});
+        const data = unnestLists(rewrite(it.data ?? {}));
         const { pub, priv } = splitPrivate(data);
         const vis = ALWAYS_PRIVATE_KINDS.includes(it.kind) ? 'private' : it.visibility;
         const id = String(it.id).replace(/[^A-Za-z0-9_-]/g, '').slice(0, 100) || doc(collection(db, 'items')).id;

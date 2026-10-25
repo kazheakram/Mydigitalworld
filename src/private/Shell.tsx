@@ -6,6 +6,7 @@ import { BowIcon, Tag } from '../ui/kit';
 import { ArtSvg } from '../art';
 import { PRESET_THEMES } from '../../shared/themes';
 import { themeVars } from '../lib/theme';
+import { applyAppearance } from '../../shared/appearance';
 import { featureMode } from '../../shared/features';
 import { useFeatureNav } from '../lib/features';
 
@@ -54,11 +55,12 @@ function RibbonNav({ mode, label }: { mode: 'private' | 'stargirl'; label: strin
 }
 
 export function ModeShell({ mode, children, small }: { mode: 'private' | 'stargirl'; children: ReactNode; small?: boolean }) {
-  const { world, owner, ready, theme } = useStore();
+  const { world, owner, ready, theme, appearance } = useStore();
   const copy = world.modes[mode];
   // A mode can wear its own theme (Stargirl Mode defaults to the night palette); otherwise it follows the main theme.
   const modeTheme = copy.theme ? [...PRESET_THEMES, ...theme.custom].find((t) => t.id === copy.theme) : undefined;
-  const style = modeTheme ? (themeVars(modeTheme) as React.CSSProperties) : undefined;
+  // A mode's own theme still wears the chosen appearance (Midnight colours, Pixie and Quiet lettering).
+  const style = modeTheme ? (themeVars(applyAppearance(modeTheme, appearance)) as React.CSSProperties) : undefined;
   if (ready && !owner) {
     return (
       <div className={`mode-page mode-${mode}`}>

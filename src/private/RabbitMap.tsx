@@ -11,7 +11,12 @@ import { ModeShell, SectionTitle } from './Shell';
 // Positions and threads are saved on each expedition (data.map); the discoveries never change.
 
 interface Discovery { id: string; url?: string; title?: string; note?: string }
-interface MapData { pos?: Record<string, [number, number]>; links?: [string, string][] }
+// Threads are stored as {from, to}: Firestore (the cloud version) refuses arrays inside arrays.
+// Older maps saved as [from, to] pairs are still read.
+type Thread = { from: string; to: string };
+interface MapData { pos?: Record<string, [number, number]>; links?: (Thread | [string, string])[] }
+const pairOf = (l: Thread | [string, string]): [string, string] => (Array.isArray(l) ? l : [l.from, l.to]);
+const sameThread = (l: Thread | [string, string], a: string, b: string) => { const [x, y] = pairOf(l); return (x === a && y === b) || (x === b && y === a); };
 interface Expedition { title: string; goal?: string; discoveries: Discovery[]; map?: MapData }
 interface Node { id: string; kind: 'topic' | 'find'; label: string; exp: string; d?: Discovery; x: number; y: number }
 
@@ -54,7 +59,7 @@ export function RabbitMapPage() {
     ];
   }), [list, local, base, hidden]);
   const byId = new Map(nodes.map((n) => [n.id, n]));
-  const threads = Object.values(local).flatMap((m) => m.links ?? []).filter(([a, b]) => byId.has(a) && byId.has(b));
+  const threads = Object.values(local).flatMap((m) => (m.links ?? []).map(pairOf)).filter(([a, b]) => byId.has(a) && byId.has(b));
   const match = (n: Node) => !q || `${n.label} ${n.d?.note ?? ''} ${n.d?.url ?? ''}`.toLowerCase().includes(q.toLowerCase());
 
   const persist = (expId: string, m: MapData) => {
@@ -87,13 +92,13 @@ export function RabbitMapPage() {
     if (threading && threading !== g.id) {
       const owner = ownerOf(threading)!; const pair: [string, string] = [threading, g.id];
       setMap(owner, (m) => {
-        const links = m.links ?? [];
-        const exists = links.some(([a, b]) => (a === pair[0] && b === pair[1]) || (a === pair[1] && b === pair[0]));
-        return { ...m, links: exists ? links.filter(([a, b]) => !((a === pair[0] && b === pair[1]) || (a === pair[1] && b === pair[0]))) : [...links, pair] };
+        const links = (m.links ?? []).map((l) => { const [from, to] = pairOf(l); return { from, to }; });
+        const exists = links.some((l) => sameThread(l, pair[0], pair[1]));
+        return { ...m, links: exists ? links.filter((l) => !sameThread(l, pair[0], pair[1])) : [...links, { from: pair[0], to: pair[1] }] };
       });
       // A thread may have been stored on the other node's expedition.
       const other = ownerOf(g.id)!;
-      if (other !== owner) setMap(other, (m) => ({ ...m, links: (m.links ?? []).filter(([a, b]) => !((a === pair[0] && b === pair[1]) || (a === pair[1] && b === pair[0]))) }));
+      if (other !== owner) setMap(other, (m) => ({ ...m, links: (m.links ?? []).filter((l) => !sameThread(l, pair[0], pair[1])).map((l) => { const [from, to] = pairOf(l); return { from, to }; }) }));
       setThreading(null); award('cartographer');
     } else setSel(g.id);
   };

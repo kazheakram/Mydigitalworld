@@ -1086,3 +1086,19 @@ kbd { font-family: var(--font-pixel); font-size: .8em; padding: 0 .35em; border:
 .puzzle-tile.gap { background: transparent; cursor: default; }
 @media (max-width: 640px) { .flower-bench { grid-template-columns: 1fr; } .pigeonholes { grid-template-columns: repeat(2, 1fr); } }
 [data-appearance='quiet'] .memory-card { transition: none; }
+
+/* ── Phase 7: contrast fixes found by the accessibility audit ── */
+.topnav a { color: var(--c-ink); }
+[data-appearance='midnight'] .atelier-tabs a.active { color: var(--c-skyTop); }
+[data-appearance='midnight'] :is(.postcard, .shop-card, .museum-plaque, .scrapbook-label, .capsule-letter, .letter-card) { background: var(--c-paper); color: var(--c-ink); }
+.topnav a.active, .topnav a:hover { color: var(--c-ink); }
+/* Painted posters, sleeves and covers carry their words on a cream label, readable on any paint colour. */
+.poster-painted .script, .poster-painted small, .sleeve-text strong, .sleeve-text small, .shop-cover span > * { background: rgba(255, 250, 244, .94); color: #4a2e35; padding: 2px 8px; border-radius: 4px; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+.poster-painted .script { display: inline; line-height: 1.5; }
+.poster-painted small, .shop-cover span > small { margin-top: 4px; align-self: flex-start; }
+.shop-cover span { align-items: center; gap: 4px; }
+.sleeve-text { gap: 3px; background: none; align-items: center; }
+.sleeve-format { background: rgba(31, 18, 28, .55); padding: 0 5px; border-radius: 3px; }
+.crate-label { background: #7a5236; }
+.pressed-flower { color: #b0566b; }
+[data-appearance='midnight'] .mode-stargirl .mode-title h1, [data-appearance='midnight'] .mode-stargirl .mode-title .smallcaps { color: var(--c-trim); }

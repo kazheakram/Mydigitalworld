@@ -20,6 +20,13 @@ export function sections(t: T): Record<string, () => Promise<void>> {
     await card.locator(`.fm-badge`).filter({ hasText: mode }).waitFor();
     await o.waitForTimeout(400);
   };
+  /** Cloud writes land a moment after the screen updates, so state checks wait (up to 15 s) instead of racing. */
+  const until = async (check: () => Promise<boolean>, msg: string, ms = 15_000) => {
+    const end = Date.now() + ms;
+    while (Date.now() < end) { if (await check().catch(() => false)) return; await o.waitForTimeout(400); }
+    assert.fail(msg);
+  };
+  (t as any).until = until;
   const publish = async () => { await t.api(o, 'POST', '/api/config/world/publish', { label: 'test' }); };
   (t as any).publish = publish;
   const resetFeature = async (featureName: string) => {
@@ -164,8 +171,7 @@ export function sections(t: T): Record<string, () => Promise<void>> {
       const after2 = await t.api(o, 'GET', '/api/items?kind=pet');
       assert.equal(after2.length, 0, 'pets removed by reset');
       assert.equal((await t.api(o, 'GET', '/api/items?kind=inbox')).length, inboxBefore, 'letterbox untouched by pets reset');
-      const w = await t.api(o, 'GET', '/api/config/world');
-      assert.ok(!JSON.stringify(w.draft.objects).includes('companion-'), 'map companions removed by reset');
+      await until(async () => !JSON.stringify((await t.api(o, 'GET', '/api/config/world')).draft.objects).includes('companion-'), 'map companions removed by reset');
       await o.goto(`${BASE}/dollhouse/pets`);
       await o.getByText('No companions yet').waitFor();
       await publish();
@@ -681,6 +687,10 @@ export function sections(t: T): Record<string, () => Promise<void>> {
       await o.waitForTimeout(900);
       await o.reload();
       await o.locator('.map-thread').waitFor({ state: 'attached' });
+      const stored = ((await t.api(o, 'GET', '/api/items?kind=expedition')) as any[]).flatMap((e) => e.data.map?.links ?? []);
+      assert.ok(stored.length === 1 && !Array.isArray(stored[0]) && stored[0].from && stored[0].to, 'threads are stored as {from, to} (Firestore refuses arrays inside arrays)');
+      const refused = await t.api(o, 'POST', '/api/items', { kind: 'expedition', visibility: 'private', roomId: null, data: { title: 'nested', mode: 'wander', startedAt: now, discoveries: [], map: { links: [['d:a', 'd:b']] } } });
+      assert.match(JSON.stringify(refused), /list inside a list/, 'lists inside lists are refused on both versions, with a clear message');
       await o.getByLabel('Search the map').fill('greenaway');
       assert.equal(await o.locator('.map-node.dim').count(), 5, 'search highlights matching nodes');
       await o.getByLabel('Search the map').fill('');
@@ -879,9 +889,90 @@ export function sections(t: T): Record<string, () => Promise<void>> {
       await setMode('Little games', 'On');
       step('achievements, pearls and games each rest and reset on their own without touching the others');
     },
+    isolation: async () => {
+      const { FEATURES } = await import('../shared/features');
+      const { ITEM_KINDS } = await import('../shared/types');
+      await o.goto(`${BASE}/dollhouse`);
+      // Something of every kind of thing, so a careless reset would have something to destroy.
+      const cfg0 = await t.api(o, 'GET', '/api/config/world');
+      const extraRooms = [['iso-records', 'recordstore'], ['iso-books', 'bookstore'], ['iso-cinema', 'cinema'], ['iso-museum', 'museum'], ['iso-commonplace', 'commonplace']]
+        .filter(([id]) => !cfg0.draft.rooms.some((r: any) => r.id === id)).map(([id, template]) => ({ id, name: id, template, visibility: 'private' }));
+      await t.api(o, 'PUT', '/api/config/world/draft', { ...cfg0.draft, rooms: [...cfg0.draft.rooms, ...extraRooms] });
+      const seedRoom: Record<string, string | null> = { book: 'library', music: 'music', entry: 'journal', artwork: 'gallery', note: 'garden', link: 'webring', drink: 'cafe', star: 'observatory', secret: 'secret-garden', film: 'iso-cinema', memory: 'iso-museum', excerpt: 'iso-commonplace' };
+      for (const kind of ITEM_KINDS.filter((k) => !['media', 'progress', 'guestbook'].includes(k))) {
+        await t.api(o, 'POST', '/api/items', { kind, roomId: seedRoom[kind] ?? null, visibility: 'private', data: { title: `iso ${kind}`, url: 'https://example.com/x', text: `iso ${kind}`, discoveries: [], map: { pos: {} }, stories: [], pages: [], date: '2020-01-01', openOn: '2030-01-01', target: 1, year: 2020, unit: 'books', letter: '', images: [], links: [] } });
+      }
+      // Kinds shared by several features also live in their shops, so each shop's reset must spare the originals.
+      await t.api(o, 'POST', '/api/items', { kind: 'music', roomId: 'iso-records', visibility: 'private', data: { title: 'shop record' } });
+      await t.api(o, 'POST', '/api/items', { kind: 'book', roomId: 'iso-books', visibility: 'private', data: { title: 'shop book' } });
+      const snapshot = async () => {
+        const items: Record<string, any> = {};
+        for (const kind of ITEM_KINDS.filter((k) => k !== 'progress')) for (const it of (await t.api(o, 'GET', `/api/items?kind=${kind}`)) as any[]) items[it.id] = it;
+        const c = await t.api(o, 'GET', '/api/config/world'); const th = await t.api(o, 'GET', '/api/config/theme');
+        return { items, rooms: c.draft.rooms, objects: c.draft.objects, theme: JSON.stringify(th.draft) };
+      };
+      const strip = (it: any, keys: string[]) => { const d = { ...it.data }; for (const k of keys) delete d[k]; return JSON.stringify({ k: it.kind, r: it.roomId, v: it.visibility, d }); };
+      const before = await snapshot();
+      assert.ok(Object.keys(before.items).length >= 25, 'a full set of things to protect');
+      // 1. Rest every feature, then wake them all: nothing at all may change.
+      for (const mode of ['Resting', 'On'] as const) {
+        await o.goto(`${BASE}/atelier/features`);
+        for (const card of await o.locator('article.fm-card').all()) {
+          await card.getByRole('radio', { name: mode, exact: true }).click();
+          await card.locator('.fm-badge').filter({ hasText: mode }).waitFor();
+        }
+        await o.waitForTimeout(1500);
+      }
+      await until(async () => { const now = await snapshot(); return JSON.stringify(Object.keys(now.items).sort()) === JSON.stringify(Object.keys(before.items).sort()) && Object.keys(before.items).every((id) => strip(now.items[id], []) === strip(before.items[id], [])) && JSON.stringify(now.rooms) === JSON.stringify(before.rooms) && now.theme === before.theme; },
+        'resting and waking every feature changed nothing');
+      step(`resting and waking all ${FEATURES.length} features left every item, room and the theme untouched`);
+      // 2. Reset each feature in turn: only what its own description promises may go.
+      let prev = before;
+      for (const f of FEATURES.filter((x) => x.reset)) {
+        await resetFeature(f.name);
+        const r = f.reset!;
+        const scopedRooms = r.inTemplates ? new Set(prev.rooms.filter((x: any) => r.inTemplates!.includes(x.template)).map((x: any) => x.id)) : null;
+        const mayGo = (it: any) => !!r.kinds?.includes(it.kind) && (!scopedRooms || scopedRooms.has(it.roomId));
+        const fieldKeys = (it: any) => (r.fields ?? []).filter((x) => x.kind === it.kind).flatMap((x) => x.keys);
+        let now = prev;
+        await until(async () => {
+          now = await snapshot();
+          return Object.values(prev.items).every((it: any) => (mayGo(it) ? !now.items[it.id] : !!now.items[it.id] && strip(now.items[it.id], fieldKeys(it)) === strip(it, fieldKeys(it))));
+        }, `reset of “${f.name}” removed only its own things`);
+        const roomsSame = JSON.stringify(now.rooms.map((x: any) => (f.id === 'bedroom' && x.settings?.bedroom ? x.id : x))) === JSON.stringify(prev.rooms.map((x: any) => (f.id === 'bedroom' && x.settings?.bedroom ? x.id : x)));
+        assert.ok(roomsSame, `reset of “${f.name}” left the rooms alone`);
+        assert.equal(now.theme, prev.theme, `reset of “${f.name}” left the theme alone`);
+        assert.ok(now.objects.every((x: any) => prev.objects.some((y: any) => y.id === x.id)) && prev.objects.every((x: any) => (r.objects && x.feature === f.id) || now.objects.some((y: any) => y.id === x.id)), `reset of “${f.name}” left the map alone`);
+        prev = now;
+      }
+      const after = prev;
+      for (const k of ['iso book', 'iso entry', 'iso note', 'iso bookmark', 'iso inbox', 'iso artwork', 'iso link'])
+        assert.ok(Object.values(after.items).some((it: any) => it.data.title === k), `${k} survived every reset`);
+      assert.ok(Object.values(after.items).some((it: any) => it.data.title === 'iso music') && !Object.values(after.items).some((it: any) => it.data.title === 'shop record'), 'pavilion record kept, shop record reset');
+      assert.ok(Object.values(after.items).some((it: any) => it.data.title === 'iso book') && !Object.values(after.items).some((it: any) => it.data.title === 'shop book'), 'library book kept, bookshop book reset');
+      step(`each of ${FEATURES.filter((x) => x.reset).length} resets removed only that feature’s own things; books, pages, notes, bookmarks, letterbox, rooms, map and theme survived`);
+    },
     polish: async () => {
       const pages = ['/dollhouse', '/dollhouse/pets', '/dollhouse/bedroom', '/dollhouse/newspaper', '/dollhouse/parlour', '/dollhouse/reading-journal', '/dollhouse/commonplace',
         '/dollhouse/scrapbook', '/dollhouse/letters', '/dollhouse/capsules', '/dollhouse/charms', '/stargirl/map', '/paths', '/atelier/features'];
+      // Rooms and content so the room templates are audited with real things in them.
+      await o.goto(`${BASE}/dollhouse`);
+      const cfg = await t.api(o, 'GET', '/api/config/world');
+      const add = [['pol-cinema', 'cinema'], ['pol-records', 'recordstore'], ['pol-books', 'bookstore'], ['pol-museum', 'museum'], ['pol-games', 'games'], ['pol-commonplace', 'commonplace']]
+        .filter(([id]) => !cfg.draft.rooms.some((r: any) => r.id === id))
+        .map(([id, template]) => ({ id, name: `Polish ${template}`, template, visibility: 'private', subtitle: 'audit room' }));
+      if (!cfg.draft.rooms.some((r: any) => r.id === 'path-meadow')) add.push({ id: 'path-meadow', name: 'The Wildflower Meadow', template: 'region', visibility: 'private', subtitle: 'clover', settings: { landscape: 'meadow' } } as any);
+      await t.api(o, 'PUT', '/api/config/world/draft', { ...cfg.draft, rooms: [...cfg.draft.rooms, ...add] });
+      const item = (kind: string, roomId: string | null, data: any, visibility = 'private') => t.api(o, 'POST', '/api/items', { kind, roomId, visibility, data });
+      await item('film', 'pol-cinema', { title: 'Roman Holiday', year: 1953, status: 'Favourite', review: 'Gelato.' });
+      await item('film', 'pol-cinema', { title: 'Brief Encounter', status: 'Watchlist' });
+      await item('music', 'pol-records', { title: 'Blue', artist: 'Joni Mitchell', crate: 'New arrivals', format: 'Vinyl' });
+      await item('book', 'pol-books', { title: 'I Capture the Castle', author: 'Dodie Smith', shelf: 'Staff picks', recommendation: 'For kitchen-sink writers.', wishlist: true, secretMessage: 'hello' });
+      await item('memory', 'pol-museum', { title: 'The first snow', date: '2019-12-02', exhibition: 'Firsts', description: 'Cold and bright.' });
+      await item('excerpt', 'pol-commonplace', { text: 'I am half agony, half hope.', author: 'Jane Austen', source: 'Persuasion', tags: ['love'], favorite: true });
+      const letter = await item('letter', null, { to: 'Clementine', from: 'Rosalind', body: 'The roses came up.', stationery: 'rose', envelope: '#f3d9df', stamp: 'bunny', ribbon: '#c97b8a', seal: '#9e2f45', sealMark: '♥', font: 'hand' }, 'unlisted');
+      await item('capsule', null, { title: 'Next spring', letter: 'Hello', images: [], links: [], openOn: '2030-01-01', sealedAt: new Date().toISOString() });
+      pages.push('/room/pol-cinema', '/room/pol-records', '/room/pol-books', '/room/pol-museum', '/room/pol-games', '/room/pol-commonplace', '/room/path-meadow', `/letter/${letter.id}`);
       const phone = await t.ownerCtx.browser()!.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, storageState: await t.ownerCtx.storageState() });
       const m = await phone.newPage();
       const wide: string[] = [];
@@ -892,6 +983,23 @@ export function sections(t: T): Record<string, () => Promise<void>> {
         const [sw, iw] = await m.evaluate(() => [document.documentElement.scrollWidth, window.innerWidth]);
         if (sw > iw + 1) wide.push(`${pth} (${sw} > ${iw})`);
       }
+      // Accessibility audit on every page, in each appearance: every control has a name, and text
+      // has enough contrast against the nearest solid background (WCAG AA: 4.5, or 3 for large text).
+      const problems: string[] = [];
+      for (const a of ['coquette', 'quiet', 'midnight', 'pixie']) {
+        await m.evaluate((x) => localStorage.setItem('rm-appearance', x), a);
+        for (const pth of pages) {
+          await m.goto(`${BASE}${pth}`);
+          await m.waitForLoadState('networkidle');
+          await m.waitForTimeout(300);
+          const found: string[] = await m.evaluate((await import('node:fs')).readFileSync('scripts/a11y-audit.js', 'utf8'));
+          for (const f of found) problems.push(`[${a}] ${pth}: ${f}`);
+        }
+      }
+      await m.evaluate(() => localStorage.removeItem('rm-appearance'));
+      if (problems.length) console.log('A11Y\n' + [...new Set(problems)].slice(0, 120).join('\n'));
+      assert.equal(problems.length, 0, `${problems.length} accessibility problems`);
+      step(`every control is named and text meets contrast on all ${pages.length} pages in all four appearances`);
       await m.goto(`${BASE}/dollhouse/letters`); await shot(m, 'phone-letters');
       await m.goto(`${BASE}/paths`); await shot(m, 'phone-paths');
       await phone.close();
