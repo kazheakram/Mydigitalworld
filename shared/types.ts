@@ -53,6 +53,10 @@ export interface SceneObject {
   animation?: string;
   /** Easter egg: clicking reveals a secret or stamp. */
   secret?: { message?: string; stamp?: string; roomId?: string };
+  /** Belongs to an optional feature; hidden everywhere while that feature is switched off. */
+  feature?: string;
+  /** Picture frame drawn around an image (Ribbonmere 2.0). */
+  frame?: 'gold' | 'lace' | 'polaroid' | 'oval';
 }
 
 export interface Region {

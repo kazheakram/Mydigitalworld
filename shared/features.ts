@@ -22,6 +22,8 @@ export interface FeatureReset {
   local?: string[];
   /** Progress fields cleared in the owner's progress record. */
   progress?: string[];
+  /** Map objects tagged with this feature (e.g. companions wandering the village) are removed. */
+  objects?: boolean;
   /** A short, honest description shown in the confirmation. */
   what: string;
 }
@@ -54,7 +56,7 @@ export const FEATURES: FeatureDef[] = [
   { id: 'regions', name: 'Paths beyond the village', group: 'World & Atmosphere', about: 'Woodland, seaside, shopping street, rose maze, winter village, meadow and lakeside — each one a place to wander, no quests.', defaultMode: 'on', templates: ['region'], routes: ['/paths'], nav: [{ label: 'Paths', to: '/paths', area: 'village' }] },
 
   // ── Pets ──
-  { id: 'pets', name: 'Pet companions', group: 'Pets & Companions', about: 'Adopt a bunny, fawn, kitten or swan. They never get hungry, sad or lost — they simply wait for you.', defaultMode: 'on', routes: ['/dollhouse/pets'], nav: [{ label: 'Pets', to: '/dollhouse/pets', area: 'dollhouse' }], reset: { kinds: ['pet'], what: 'Says goodbye to all adopted pets and their accessories.' } },
+  { id: 'pets', name: 'Pet companions', group: 'Pets & Companions', about: 'Adopt a bunny, fawn, kitten or swan. They never get hungry, sad or lost — they simply wait for you.', defaultMode: 'on', routes: ['/dollhouse/pets'], nav: [{ label: 'Pets', to: '/dollhouse/pets', area: 'dollhouse' }], reset: { kinds: ['pet'], objects: true, what: 'Says goodbye to all adopted pets, their accessories and any that wander the village map.' } },
 
   // ── Reading & Media ──
   { id: 'newspaper', name: 'The Morning Paper', group: 'Reading & Media', about: 'A vintage newspaper made from your own RSS subscriptions, with daily editions and an archive.', defaultMode: 'on', routes: ['/dollhouse/newspaper'], nav: [{ label: 'Newspaper', to: '/dollhouse/newspaper', area: 'dollhouse' }], reset: { kinds: ['edition'], what: 'Deletes the archive of past editions (your subscriptions and saved posts stay).' } },
@@ -115,7 +117,12 @@ export function featureForPath(path: string): FeatureDef | undefined {
 }
 
 /** For visitors: only modes travel, never a feature's private settings. */
+/** Settings visitors may see (they change what the public map looks like). Everything else stays private. */
+const PUBLIC_SETTINGS: Record<string, string[]> = { weather: ['choice'], daynight: ['choice'] };
 export function publicFeatures(features: WorldConfig['features']): WorldConfig['features'] {
   if (!features) return undefined;
-  return Object.fromEntries(Object.entries(features).map(([k, v]) => [k, { mode: v.mode }]));
+  return Object.fromEntries(Object.entries(features).map(([k, v]) => {
+    const keys = PUBLIC_SETTINGS[k]?.filter((s) => typeof v.settings?.[s] === 'string' && v.settings[s].length < 40);
+    return [k, keys?.length ? { mode: v.mode, settings: Object.fromEntries(keys.map((s) => [s, v.settings![s]])) } : { mode: v.mode }];
+  }));
 }

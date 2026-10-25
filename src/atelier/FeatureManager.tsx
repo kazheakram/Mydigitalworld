@@ -8,6 +8,13 @@ import { setFeature } from '../lib/features';
 import { resetFeature } from '../lib/featureReset';
 import { Modal } from '../ui/kit';
 import { AtelierShell } from './Atelier';
+import { DAYLIGHT_CHOICES, WEATHER_CHOICES } from '../world/Atmosphere';
+
+/** Small per-feature options shown on its card. */
+const FEATURE_OPTIONS: Record<string, { label: string; key: string; choices: { id: string; name: string }[] }> = {
+  weather: { label: 'Weather', key: 'choice', choices: WEATHER_CHOICES },
+  daynight: { label: 'Light', key: 'choice', choices: DAYLIGHT_CHOICES },
+};
 
 // The Feature Manager: one place to switch every optional part of Ribbonmere on, hide it, let it
 // rest, or (separately, with confirmation) reset only its own data.
@@ -84,6 +91,17 @@ export function FeatureManagerPage() {
                         <button key={m.id} role="radio" aria-checked={st.mode === m.id} className={`chip ${st.mode === m.id ? 'on' : ''}`} title={m.hint} onClick={() => setMode(f, m.id)}>{m.label}</button>
                       ))}
                     </div>
+                    {FEATURE_OPTIONS[f.id] && (() => {
+                      const opt = FEATURE_OPTIONS[f.id];
+                      return (
+                        <label className="fm-option"><span className="smallcaps">{opt.label}</span>
+                          <select className="input" value={st.settings?.[opt.key] ?? opt.choices[0].id}
+                            onChange={(e) => saveWorld(setFeature(world, f.id, { settings: { ...(st.settings ?? {}), [opt.key]: e.target.value } }))}>
+                            {opt.choices.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                          </select>
+                        </label>
+                      );
+                    })()}
                     <div className="row wrap gap fm-links">
                       {f.nav?.map((n) => <Link key={n.to} className="linkish" to={n.to}>open</Link>)}
                       {f.reset && <button className="linkish danger-link" onClick={() => { setConfirming(f); setTyped(''); }}>reset…</button>}

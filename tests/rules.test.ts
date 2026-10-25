@@ -152,3 +152,21 @@ test('before the owner ID is filled in, nobody has owner powers', async () => {
     }
   } finally { await raw.cleanup(); }
 });
+
+test('Ribbonmere 2.0 kinds: the rules know every kind, and always-private kinds stay private', async () => {
+  const { ITEM_KINDS, ALWAYS_PRIVATE_KINDS } = await import('../shared/types');
+  const rules = fs.readFileSync('firestore.rules', 'utf8');
+  const list = (fn: string) => [...(rules.match(new RegExp(`function ${fn}\\(\\)\\s*\\{([\\s\\S]*?)\\}`))?.[1] ?? '').matchAll(/'([a-z]+)'/g)].map((m) => m[1]);
+  assert.deepEqual([...list('allKinds')].sort(), [...ITEM_KINDS].sort(), 'allKinds() matches shared ITEM_KINDS');
+  for (const k of ALWAYS_PRIVATE_KINDS) assert.ok(list('privateKinds').includes(k), `${k} is private in the rules`);
+  const db = env.authenticatedContext(OWNER).firestore();
+  await assertSucceeds(setDoc(doc(db, 'items/pet1'), item({ kind: 'pet', visibility: 'private', roomId: null, data: { name: 'Clover' } })));
+  await assertSucceeds(setDoc(doc(db, 'items/prog'), item({ kind: 'progress', visibility: 'private', roomId: null, data: { pearls: 3 } })));
+  for (const k of ['capsule', 'edition', 'challenge', 'progress']) {
+    await assertFails(setDoc(doc(db, `items/x-${k}`), item({ kind: k, visibility: 'public', roomId: null })));
+  }
+  for (const [, odb] of outsiders()) {
+    await assertFails(getDoc(doc(odb, 'items/pet1')));
+    await assertFails(getDoc(doc(odb, 'items/prog')));
+  }
+});

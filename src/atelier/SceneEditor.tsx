@@ -278,6 +278,13 @@ function Properties({ o, rooms, regions, kind, update, onDelete, onDuplicate, on
         </Field>
       )}
       {o.type !== 'text' && o.type !== 'link' && <ImagePicker label={o.type === 'image' ? 'Image' : 'Replace artwork with my own image'} value={o.src} onChange={(src) => update({ src: src || undefined })} />}
+      {o.type === 'image' && o.src && (
+        <Field label="Frame">
+          <select className="input" value={o.frame ?? ''} onChange={(e) => update({ frame: (e.target.value || undefined) as SceneObject['frame'] })}>
+            <option value="">no frame</option><option value="gold">gilded frame</option><option value="lace">lace frame</option><option value="polaroid">polaroid</option><option value="oval">oval cameo</option>
+          </select>
+        </Field>
+      )}
       {def?.slots && def.slots.length > 0 && !o.src && (
         <Field group label="Colours">
           <span className="row wrap">

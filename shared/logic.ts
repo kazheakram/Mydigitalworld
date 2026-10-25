@@ -15,7 +15,7 @@ export function publicWorld(w: WorldConfig): WorldConfig {
   const rooms = w.rooms.filter((r) => r.visibility !== 'private' && !resting(r.template));
   const roomIds = new Set(rooms.map((r) => r.id));
   const hiddenRegions = new Set(w.regions.filter((r) => !r.revealed).map((r) => r.id));
-  const objects = w.objects.filter((o) => !o.ownerOnly && !o.hidden && !(o.regionId && hiddenRegions.has(o.regionId)) && (!o.roomId || roomIds.has(o.roomId)));
+  const objects = w.objects.filter((o) => !o.ownerOnly && !o.hidden && !(o.regionId && hiddenRegions.has(o.regionId)) && (!o.roomId || roomIds.has(o.roomId)) && !(o.feature && featureMode(w, o.feature) === 'off'));
   return {
     ...w,
     objects,

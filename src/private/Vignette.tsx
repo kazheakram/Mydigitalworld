@@ -14,6 +14,15 @@ const SCENES: Record<string, Piece[]> = {
   rabbit: [['telescope', 20, 20, 110, 110], ['moon', 140, 10, 45, 45], ['star', 150, 70, 26, 26]],
   discoveries: [['stamp', 110, 20, 70, 90], ['letter', 20, 60, 100, 80], ['heart', 40, 10, 40, 40]],
   collections: [['letter', 20, 40, 120, 90], ['pearls', 90, 10, 100, 60], ['bow', 130, 90, 50, 40]],
+  bedroom: [['window', 10, 6, 70, 80], ['bed', 70, 40, 110, 100], ['floorlamp', 0, 60, 50, 80]],
+  pets: [['home-cushion', 10, 90, 90, 55], ['pet-bunny', 20, 60, 70, 70], ['pet-fawn', 100, 40, 90, 95]],
+  newspaper: [['teacup', 120, 70, 70, 60], ['letter', 20, 30, 110, 90], ['star', 150, 15, 30, 30]],
+  parlour: [['armchair', 10, 40, 100, 100], ['candle', 120, 50, 40, 80], ['moon', 150, 10, 40, 40]],
+  journal: [['books', 10, 50, 90, 90], ['bookshelf', 100, 10, 90, 130]],
+  scrapbook: [['frame', 20, 20, 80, 90], ['stamp', 100, 40, 60, 75], ['heart', 150, 15, 40, 40], ['butterfly', 120, 95, 40, 40]],
+  letters: [['letter', 20, 40, 110, 90], ['stamp', 120, 20, 60, 75], ['bow', 60, 15, 50, 40]],
+  capsules: [['chest', 30, 40, 110, 100], ['star', 140, 20, 30, 30], ['moon', 160, 50, 30, 30]],
+  charms: [['pearls', 10, 20, 110, 60], ['musicbox', 100, 50, 90, 90], ['heart', 30, 80, 40, 40]],
 };
 
 function Diary() {

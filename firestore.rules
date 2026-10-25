@@ -16,10 +16,12 @@ service cloud.firestore {
     function isOwner() { return signedIn() && ownerUid().matches('^[A-Za-z0-9]{10,128}$') && request.auth.uid == ownerUid(); }
 
     // Kinds that are always private, whatever their visibility field says.
-    function privateKinds() { return ['inbox', 'expedition', 'todo', 'bookmark', 'media']; }
+    // Keep in step with ITEM_KINDS / ALWAYS_PRIVATE_KINDS in shared/types.ts (a test checks this).
+    function privateKinds() { return ['inbox', 'expedition', 'todo', 'bookmark', 'media', 'capsule', 'edition', 'challenge', 'progress']; }
     function allKinds() {
       return ['book', 'entry', 'artwork', 'music', 'note', 'bookmark', 'inbox', 'expedition',
-              'link', 'drink', 'star', 'secret', 'todo', 'guestbook', 'media', 'freeform'];
+              'link', 'drink', 'star', 'secret', 'todo', 'guestbook', 'media', 'freeform',
+              'pet', 'excerpt', 'film', 'memory', 'scrapbook', 'letter', 'capsule', 'edition', 'challenge', 'progress'];
     }
     function publicWorld() { return get(/databases/$(database)/documents/config/world_public).data; }
     function roomIsPublic(roomId) { return roomId == null || roomId in publicWorld().publicRoomIds; }

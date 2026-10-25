@@ -450,7 +450,7 @@ export function createApp(opts: AppOptions) {
       const ins = db.prepare('INSERT OR REPLACE INTO items(id, kind, room_id, visibility, data, created_at, updated_at) VALUES(?,?,?,?,?,?,?)');
       for (const it of b.items ?? []) {
         if (!ITEM_KINDS.includes(it.kind) || !VIS.includes(it.visibility)) continue;
-        ins.run(String(it.id), it.kind, it.roomId ?? null, it.visibility, JSON.stringify(it.data ?? {}), it.createdAt ?? now(), it.updatedAt ?? now());
+        ins.run(String(it.id), it.kind, it.roomId ?? null, ALWAYS_PRIVATE_KINDS.includes(it.kind) ? 'private' : it.visibility, JSON.stringify(it.data ?? {}), it.createdAt ?? now(), it.updatedAt ?? now());
       }
       for (const f of b.feeds ?? []) {
         db.prepare('INSERT OR IGNORE INTO feeds(id, url, title, site_url, category) VALUES(?,?,?,?,?)').run(String(f.id), String(f.url), String(f.title), f.siteUrl ?? null, String(f.category ?? 'Imported'));

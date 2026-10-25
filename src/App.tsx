@@ -33,7 +33,17 @@ const RoomsManagerPage = lazy(() => import('./atelier/Studio').then((m) => ({ de
 const MediaLibraryPage = lazy(() => import('./atelier/Studio').then((m) => ({ default: m.MediaLibraryPage })));
 const VillageSettingsPage = lazy(() => import('./atelier/Studio').then((m) => ({ default: m.VillageSettingsPage })));
 const FeatureManagerPage = lazy(() => import('./atelier/FeatureManager').then((m) => ({ default: m.FeatureManagerPage })));
+const BedroomPage = lazy(() => import('./private/Bedroom').then((m) => ({ default: m.BedroomPage })));
+const PetsPage = lazy(() => import('./private/Pets').then((m) => ({ default: m.PetsPage })));
+const CompanionLayer = lazy(() => import('./private/Pets').then((m) => ({ default: m.CompanionLayer })));
 const BackupsPage = lazy(() => import('./atelier/Studio').then((m) => ({ default: m.BackupsPage })));
+
+/** The following companion only loads for the owner when the Pets feature is on. */
+function OwnerCompanion() {
+  const { owner, world } = useStore();
+  if (!owner || featureMode(world, 'pets') !== 'on') return null;
+  return <Suspense fallback={null}><CompanionLayer /></Suspense>;
+}
 
 /** Connects the optional progress system to who is looking and which features are on; Alt+Q toggles Quiet. */
 function ProgressBridge() {
@@ -84,6 +94,7 @@ function Shell() {
       <ProgressBridge />
       <PixieSprites />
       <PixelateFilter />
+      <OwnerCompanion />
       <Suspense fallback={<Loading />}>
         <FeatureGate>
         <Routes>
@@ -101,6 +112,8 @@ function Shell() {
           <Route path="/dollhouse/diary" element={<DiaryPage />} />
           <Route path="/dollhouse/bookmarks" element={<CabinetPage />} />
           <Route path="/dollhouse/favorites" element={<ConservatoryPage />} />
+          <Route path="/dollhouse/bedroom" element={<BedroomPage />} />
+          <Route path="/dollhouse/pets" element={<PetsPage />} />
           <Route path="/stargirl" element={<StargirlPage />} />
           <Route path="/stargirl/rabbit-holes" element={<RabbitHolesPage />} />
           <Route path="/stargirl/discoveries" element={<DiscoveriesPage />} />

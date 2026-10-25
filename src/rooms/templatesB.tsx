@@ -1,4 +1,5 @@
 import { useMemo, useState, type FormEvent } from 'react';
+import { InteriorBackground } from '../world/Interior';
 import { Link } from 'react-router-dom';
 import type { Item, Room } from '../../shared/types';
 import { useStore, chime } from '../lib/store';
@@ -330,7 +331,7 @@ export function FreeformRoom({ room }: P) {
       {objs.length === 0 ? <Empty title="An empty, sunlit room" art="✧">{owner ? 'Open the Atelier to place furniture, images, text and links.' : 'Nothing has been arranged here yet.'}</Empty> : (
         <div className="freeform-stage" style={{ background: room.sceneBackground }}>
           <Scene width={1200} height={750} objects={objs} ariaLabel={room.name} showLabels="always"
-            background={<rect width={1200} height={750} fill={room.sceneBackground ? 'transparent' : 'var(--c-cream)'} />}
+            background={room.settings?.interior ? <InteriorBackground interior={room.settings.interior} /> : <rect width={1200} height={750} fill={room.sceneBackground ? 'transparent' : 'var(--c-cream)'} />}
             onActivate={(o) => { if (o.href) (o.href.startsWith('/') ? (window.location.href = o.href) : window.open(o.href, '_blank', 'noopener')); }} />
         </div>
       )}

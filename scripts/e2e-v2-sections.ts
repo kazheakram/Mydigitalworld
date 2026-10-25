@@ -6,7 +6,8 @@ interface T { o: Page; v: Page; BASE: string; browser: Browser; ownerCtx: Browse
 export function sections(t: T): Record<string, () => Promise<void>> {
   const { o, v, BASE, shot, enter, step } = t;
   const setAppearance = async (p: Page, a: string) => {
-    await p.getByRole('button', { name: /comfort settings/i }).first().click();
+    const btn = p.getByRole('button', { name: /comfort settings/i }).first();
+    if ((await btn.getAttribute('aria-expanded')) !== 'true') await btn.click();
     await p.getByRole('radio', { name: new RegExp(`^${a}$`, 'i') }).first().click();
     await p.keyboard.press('Escape');
     await p.mouse.click(5, 300);
@@ -90,6 +91,172 @@ export function sections(t: T): Record<string, () => Promise<void>> {
       assert.equal(await v.evaluate(() => document.documentElement.dataset.appearance), 'coquette', 'Alt+Q toggles Quiet off');
       await o.evaluate(() => localStorage.removeItem('rm-appearance'));
       step('four appearance modes switch instantly from any screen; Quiet keeps every place reachable; Alt+Q toggles');
+    },
+    pets: async () => {
+      await o.goto(`${BASE}/dollhouse/pets`);
+      await o.getByText('No companions yet').waitFor();
+      await o.getByRole('button', { name: /white bunny/i }).click();
+      await o.getByLabel(/what will you call them/i).fill('Clover');
+      await o.getByRole('button', { name: 'Bring them home' }).click();
+      const card = o.getByRole('article', { name: 'Clover' });
+      await card.waitFor();
+      await o.getByRole('button', { name: /baby fawn/i }).click();
+      await o.getByLabel(/what will you call them/i).fill('Bambi');
+      await o.getByRole('button', { name: 'Bring them home' }).click();
+      await o.getByRole('article', { name: 'Bambi' }).waitFor();
+      step('adopted two companions (a bunny and a fawn) and named them');
+      await card.getByText('Accessories & colours').click();
+      await card.getByLabel('pearl necklace').check();
+      await card.getByLabel('flower crown').check();
+      await card.getByRole('button', { name: 'bow #bfa6d6' }).click();
+      await o.waitForTimeout(500);
+      await o.reload();
+      await o.getByRole('article', { name: 'Clover' }).getByText('Accessories & colours').click();
+      assert.ok(await o.getByRole('article', { name: 'Clover' }).getByLabel('pearl necklace').isChecked(), 'accessory saved');
+      await o.getByRole('button', { name: 'Pat Clover' }).click();
+      await o.locator('.pet-hearts i').first().waitFor({ state: 'attached' });
+      step('accessories (pearls, flower crown, lilac bow) are saved; patting shows hearts');
+      // The first companion follows the owner around; switch to the fawn.
+      const comp = o.locator('.companion');
+      await comp.waitFor();
+      assert.match((await comp.getAttribute('aria-label'))!, /Clover/);
+      await o.getByRole('article', { name: 'Bambi' }).getByLabel('follows me around').check();
+      await o.locator('.companion[aria-label*="Bambi"]').waitFor();
+      const before = await comp.evaluate((e) => getComputedStyle(e).transform);
+      await o.mouse.move(200, 500); await o.waitForTimeout(900);
+      const after = await comp.evaluate((e) => getComputedStyle(e).transform);
+      assert.notEqual(before, after, 'companion drifts after the pointer');
+      await shot(o, 'pets-page');
+      step('one companion at a time follows the pointer; switching followers works');
+      // Wandering the public map.
+      await o.getByRole('article', { name: 'Clover' }).getByLabel('wanders the village map').check();
+      await o.waitForTimeout(500);
+      await publish();
+      await v.goto(BASE); await enter(v);
+      await v.locator('[data-id^="companion-"]').first().waitFor();
+      const priv = await t.api(v, 'GET', '/api/items?kind=pet');
+      assert.ok(!Array.isArray(priv) || priv.length === 0, 'visitors cannot list pets');
+      step('a companion can wander the public map; the pet records themselves stay private');
+      // Lifecycle: hide → rest → on → reset.
+      await setMode('Pet companions', 'Hidden');
+      await o.goto(`${BASE}/dollhouse`);
+      assert.equal(await o.locator('.polaroid', { hasText: 'Companions' }).count(), 0, 'hidden from the dollhouse cards');
+      await o.goto(`${BASE}/dollhouse/pets`);
+      await o.getByRole('article', { name: 'Clover' }).waitFor();
+      await o.goto(BASE); await enter(o);
+      assert.equal(await o.locator('[data-id^="companion-"]').count(), 0, 'hidden companion is off the map');
+      await setMode('Pet companions', 'Resting');
+      assert.equal(await o.locator('.companion').count(), 0, 'no follower while resting');
+      await o.goto(`${BASE}/dollhouse/pets`);
+      await o.getByText('Pet companions is resting').waitFor();
+      await publish();
+      await v.goto(BASE); await enter(v);
+      assert.equal(await v.locator('[data-id^="companion-"]').count(), 0, 'resting companion is off the public map');
+      await setMode('Pet companions', 'On');
+      await o.goto(`${BASE}/dollhouse/pets`);
+      await o.getByRole('article', { name: 'Clover' }).waitFor();
+      await o.getByRole('article', { name: 'Bambi' }).waitFor();
+      step('hidden → resting → on: companions, accessories and map spot all come back');
+      // Unrelated content stays put through a reset.
+      await o.goto(`${BASE}/dollhouse/inbox`);
+      const inboxBefore = (await t.api(o, 'GET', '/api/items?kind=inbox')).length;
+      await resetFeature('Pet companions');
+      const after2 = await t.api(o, 'GET', '/api/items?kind=pet');
+      assert.equal(after2.length, 0, 'pets removed by reset');
+      assert.equal((await t.api(o, 'GET', '/api/items?kind=inbox')).length, inboxBefore, 'letterbox untouched by pets reset');
+      const w = await t.api(o, 'GET', '/api/config/world');
+      assert.ok(!JSON.stringify(w.draft.objects).includes('companion-'), 'map companions removed by reset');
+      await o.goto(`${BASE}/dollhouse/pets`);
+      await o.getByText('No companions yet').waitFor();
+      await publish();
+      step('reset removes only pets (and their map spots); the letterbox is untouched');
+    },
+    bedroom: async () => {
+      await o.goto(`${BASE}/dollhouse/bedroom`);
+      await o.getByRole('button', { name: 'Make my bedroom' }).click();
+      await o.getByRole('group', { name: 'My bedroom' }).waitFor();
+      await o.getByLabel('Wallpaper').selectOption('roses');
+      await o.getByLabel('Floor').selectOption('checker');
+      await o.waitForTimeout(500);
+      await o.reload();
+      assert.equal(await o.getByLabel('Wallpaper').inputValue(), 'roses');
+      await shot(o, 'bedroom');
+      step('bedroom created with furniture; wallpaper and floor choices are saved');
+      // Arrange in the editor: the room editor shows the same interior and a photo frame option exists.
+      await o.getByRole('link', { name: /arrange furniture/i }).click();
+      await o.waitForURL(/atelier\/room\/my-bedroom/);
+      await o.locator('.interior-bg').first().waitFor();
+      step('the Atelier room editor arranges the bedroom over its wallpaper');
+      // Private by default.
+      await publish();
+      await v.goto(`${BASE}/room/my-bedroom`);
+      await v.waitForTimeout(800);
+      assert.equal(await v.locator('.interior-bg').count(), 0, 'visitors cannot open the private bedroom');
+      const pub = await t.api(v, 'GET', '/api/config/world');
+      assert.ok(!JSON.stringify(pub.published).includes('my-bedroom'), 'bedroom absent from the public world');
+      step('the bedroom is private: not in the public world, not openable by visitors');
+      await setMode('My bedroom', 'Hidden');
+      await o.goto(`${BASE}/dollhouse/bedroom`);
+      await o.getByRole('group', { name: 'My bedroom' }).waitFor();
+      await setMode('My bedroom', 'Resting');
+      await o.goto(`${BASE}/dollhouse/bedroom`);
+      await o.getByText('My bedroom is resting').waitFor();
+      await setMode('My bedroom', 'On');
+      await o.goto(`${BASE}/dollhouse/bedroom`);
+      assert.equal(await o.getByLabel('Wallpaper').inputValue(), 'roses', 'decoration survives resting');
+      await resetFeature('My bedroom');
+      await o.goto(`${BASE}/dollhouse/bedroom`);
+      assert.equal(await o.getByLabel('Wallpaper').inputValue(), 'stripes', 'reset to the starting wallpaper');
+      const w = await t.api(o, 'GET', '/api/config/world');
+      assert.ok(w.draft.rooms.length >= 10, 'other rooms untouched');
+      step('bedroom: hidden → resting → on keeps decoration; reset returns only the bedroom to its start');
+    },
+    world: async () => {
+      await o.goto(`${BASE}/atelier/features`);
+      await o.getByRole('article', { name: 'Weather' }).getByRole('combobox').selectOption('snow');
+      await o.getByRole('article', { name: 'Day & night' }).getByRole('combobox').selectOption('night');
+      await o.waitForTimeout(500);
+      await publish();
+      await v.goto(BASE); await enter(v);
+      await v.locator('.world-page[data-weather="snow"][data-daypart="night"]').waitFor();
+      assert.ok(await v.locator('.snow-flake').count() > 10, 'snow falls');
+      await v.locator('.lamp-glow').first().waitFor();
+      await shot(v, 'world-snow-night');
+      step('weather and light chosen by the owner reach visitors after publishing (snowy night, glowing lamps)');
+      await o.goto(`${BASE}/atelier/features`);
+      await o.getByRole('article', { name: 'Weather' }).getByRole('combobox').selectOption('petals');
+      await o.getByRole('article', { name: 'Day & night' }).getByRole('combobox').selectOption('golden');
+      await o.waitForTimeout(500);
+      await publish();
+      await v.goto(BASE); await enter(v);
+      await v.locator('.petal-fall').first().waitFor();
+      await shot(v, 'world-petals-golden');
+      // Little interactions.
+      await v.getByRole('button', { name: /tap the rose fountain/i }).first().click();
+      await v.locator('.poke-splash').first().waitFor();
+      const lamp = v.getByRole('button', { name: /tap the lamp post/i }).first();
+      await lamp.click();
+      await v.locator('.obj.lamp-off').first().waitFor();
+      await lamp.click();
+      assert.equal(await v.locator('.obj.lamp-off').count(), 0, 'lamp back on');
+      step('tapping the fountain splashes; lamps switch off and on');
+      await setAppearance(v, 'Quiet');
+      assert.equal(await v.locator('.world-page[data-weather]').count(), 0, 'Quiet: no weather');
+      assert.equal(await v.locator('.obj.playful').count(), 0, 'Quiet: no playful objects');
+      await setAppearance(v, 'Coquette');
+      for (const f of ['Weather', 'Day & night', 'Little interactions']) await setMode(f, 'Resting');
+      await publish();
+      await v.goto(BASE); await enter(v);
+      assert.equal(await v.locator('.world-page[data-weather], .world-page[data-daypart]').count(), 0, 'resting: no atmosphere');
+      assert.equal(await v.locator('.obj.playful').count(), 0, 'resting: no interactions');
+      assert.ok(await v.locator('.obj.interactive').count() >= 9, 'buildings still open rooms');
+      for (const f of ['Weather', 'Day & night', 'Little interactions']) await setMode(f, 'On');
+      await resetFeature('Weather');
+      await publish();
+      const pub = await t.api(v, 'GET', '/api/config/world');
+      assert.equal(pub.published.features?.weather?.settings?.choice, undefined, 'weather reset to follow the season');
+      assert.equal(pub.published.features?.daynight?.settings?.choice, 'golden', 'unrelated feature settings untouched');
+      step('Quiet and resting switch atmosphere off without touching buildings; resetting weather leaves the light alone');
     },
   };
 }

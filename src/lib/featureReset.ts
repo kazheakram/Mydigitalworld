@@ -36,6 +36,7 @@ export async function resetFeature(id: string, world: WorldConfig, saveWorld: (w
   // Feature-specific settings go back to their defaults; the on/hidden/off choice is kept.
   const cur = world.features?.[id];
   let next: WorldConfig = { ...world, features: { ...(world.features ?? {}), [id]: { mode: cur?.mode ?? def.defaultMode } } };
+  if (r.objects) next = { ...next, objects: next.objects.filter((o) => o.feature !== id) };
   if (id === 'bedroom') {
     const { resetBedroom } = await import('../private/Bedroom');
     next = resetBedroom(next);

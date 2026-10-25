@@ -13,7 +13,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { id: 'all-paths', name: 'Every Path', about: 'Wandered every revealed path.', pearls: 15, glyph: '🗺' },
   { id: 'pet-friend', name: 'A New Friend', about: 'Adopted a companion.', pearls: 10, glyph: '🐇' },
   { id: 'dressed-up', name: 'Dressed Up', about: 'Gave a companion a new accessory.', pearls: 4, glyph: '🎀' },
-  { id: 'decorator', name: 'Little Decorator', about: 'Placed five things in your bedroom.', pearls: 8, glyph: '🛋' },
+  { id: 'decorator', name: 'Little Decorator', about: 'Redecorated your bedroom.', pearls: 8, glyph: '🛋' },
   { id: 'scrapbooker', name: 'Scrapbooker', about: 'Made a scrapbook page.', pearls: 6, glyph: '✂' },
   { id: 'collector', name: 'Collector', about: 'Started a new collection (a shelf, crate, exhibition or display).', pearls: 6, glyph: '🗝' },
   { id: 'commonplace', name: 'Pressed Between Pages', about: 'Kept your first passage in the commonplace book.', pearls: 4, glyph: '❧' },
