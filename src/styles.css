@@ -1102,3 +1102,5 @@ kbd { font-family: var(--font-pixel); font-size: .8em; padding: 0 .35em; border:
 .crate-label { background: #7a5236; }
 .pressed-flower { color: #b0566b; }
 [data-appearance='midnight'] .mode-stargirl .mode-title h1, [data-appearance='midnight'] .mode-stargirl .mode-title .smallcaps { color: var(--c-trim); }
+.postcard-cloud { color: #5e4652; } /* clouds are always pale, whatever the appearance */
+[data-appearance='midnight'] .mode-stargirl :is(.btn.ghost, .icon-btn) { color: var(--c-trim); }

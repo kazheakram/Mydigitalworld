@@ -978,7 +978,7 @@ export function sections(t: T): Record<string, () => Promise<void>> {
       const wide: string[] = [];
       for (const pth of pages) {
         await m.goto(`${BASE}${pth}`);
-        await m.waitForLoadState('networkidle');
+        await m.locator('main, .world-page, .page-main').first().waitFor(); await m.waitForTimeout(600); // (the cloud version keeps a live connection open, so the network never goes idle)
         await m.waitForTimeout(400);
         const [sw, iw] = await m.evaluate(() => [document.documentElement.scrollWidth, window.innerWidth]);
         if (sw > iw + 1) wide.push(`${pth} (${sw} > ${iw})`);
@@ -990,7 +990,7 @@ export function sections(t: T): Record<string, () => Promise<void>> {
         await m.evaluate((x) => localStorage.setItem('rm-appearance', x), a);
         for (const pth of pages) {
           await m.goto(`${BASE}${pth}`);
-          await m.waitForLoadState('networkidle');
+          await m.locator('main, .world-page, .page-main').first().waitFor(); await m.waitForTimeout(600); // (the cloud version keeps a live connection open, so the network never goes idle)
           await m.waitForTimeout(300);
           const found: string[] = await m.evaluate((await import('node:fs')).readFileSync('scripts/a11y-audit.js', 'utf8'));
           for (const f of found) problems.push(`[${a}] ${pth}: ${f}`);

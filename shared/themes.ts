@@ -114,7 +114,7 @@ export const PRESET_THEMES: ThemeTokens[] = [
     colors: {
       ...COQUETTE.colors,
       bg: '#e9e1e2', paper: '#f8f2ec', ink: '#3b3f5c', inkSoft: '#5c607e', pink: '#e9bcc6', blush: '#f1dedf',
-      rose: '#c08493', roseDeep: '#8d5568', sky: '#4b5378', skyTop: '#272c4a', sage: '#9aa59a', sageDeep: '#5f6e6a',
+      rose: '#c08493', roseDeep: '#865064', sky: '#4b5378', skyTop: '#272c4a', sage: '#9aa59a', sageDeep: '#5f6e6a',
       water: '#6f86a8', roof: '#7d86ad', wall: '#f5ede6', window: '#ffe1a0', gold: '#c6a15f', accent: '#8a9bc4',
     },
     texture: 'stars',

@@ -115,6 +115,8 @@ npm run screenshots                   # home server: end-to-end in Chromium (17 
 npm run test:cloud                    # cloud: end-to-end in Chromium against Firebase emulators + wrangler (incl. 2.0 checks)
 npm run build && npm run test:v2      # Ribbonmere 2.0: every feature's lifecycle (use → hide → rest → on → reset), privacy, appearance, phone layout
                                       #   (run some sections only: npm run test:v2 -- pets letters paths)
+npm run test:v2:cloud                 # the same 2.0 sections on the cloud version: Firebase emulators + wrangler
+                                      #   (emulator-only "demo-ribbonmere" project — never a real Firebase database)
 ```
 
 The cloud end-to-end run covers signing in, seeding the village, the setup checklist, and privacy (checked against Firestore directly, not only the pages). It also covers live sync between two devices, offline editing, private-by-default images, the RSS reader through the function, the letterbox and expeditions, autosave, draft and publish, theme sync, the moderated and rate-limited guestbook, search, backups, migrating a real SQLite database, every room template, bookmarks, widgets, new rooms starting private, checkpoints, OPML, replace-restore guarded by a safety backup, password change, the phone layout and reduced motion.
